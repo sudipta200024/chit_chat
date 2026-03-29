@@ -11,8 +11,8 @@ class ChatUser {
     required this.email,
   });
   late final String image;
-  late final String name;
-  late final String about;
+  late  String name;
+  late  String about;
   late final String createdAt;
   late final String id;
   late final String lastActive;

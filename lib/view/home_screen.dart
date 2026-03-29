@@ -3,6 +3,7 @@ import 'package:chit_chat/main.dart';
 import 'package:chit_chat/view/profile_screen.dart';
 import 'package:chit_chat/widget/chat_user_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../api/apis.dart';
@@ -17,25 +18,64 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<ChatUser> get dataList => Apis.allUsers; //getter list
+  List<ChatUser> _dataList = []; //getter list
+  final List<ChatUser> _searchList = [];
+  late bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Apis.getSelfInfo();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: Icon(Icons.home_outlined),
         actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.search)),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+              });
+            },
+            icon: _isSearching
+                ? Icon(CupertinoIcons.clear_circled)
+                : Icon(Icons.search),
+          ),
           IconButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ProfileScreen()),
+                MaterialPageRoute(builder: (_) => ProfileScreen(user: Apis.me)),
               );
             },
             icon: Icon(Icons.more_vert_outlined),
           ),
         ],
-        title: Text('Chit Chat'),
+        title: _isSearching
+            ? TextField(
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'name,email..',
+                  hintStyle: TextStyle(fontSize: 16, letterSpacing: 1.5),
+                ),
+                autofocus: true,
+                //search Logic
+                onChanged: (val){
+                  _searchList.clear();
+                  for(var i in _dataList){
+                    if(i.name.toLowerCase().contains(val.toLowerCase()) || i.email.toLowerCase().contains(val.toLowerCase())){
+                      _searchList.add(i);
+                      setState(() {
+                        _searchList;
+                      });
+                    }
+                  }
+                }
+              )
+            : Text('Chit Chat'),
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: 90, right: 5),
@@ -54,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       body: StreamBuilder(
-        stream: Apis.firestore.collection('users').snapshots(),
+        stream: Apis.getAllUser(),
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             //connection loading
@@ -65,15 +105,19 @@ class _HomeScreenState extends State<HomeScreen> {
             //connection loaded
             case ConnectionState.active:
             case ConnectionState.done:
-              final data = snapshot.data?.docs; // final data = snapshot.data?.docs[0].data();
-              Apis.allUsers= data?.map((e) => ChatUser.fromJson(e.data())).toList() ?? []; //for loop inside the data mapping
-              if (dataList.isNotEmpty) {
+              final data = snapshot
+                  .data
+                  ?.docs; // final data = snapshot.data?.docs[0].data();
+              _dataList =
+                  data?.map((e) => ChatUser.fromJson(e.data())).toList() ??
+                  []; //for loop inside the data mapping
+              if (_dataList.isNotEmpty) {
                 return ListView.builder(
                   physics: BouncingScrollPhysics(),
                   padding: EdgeInsets.only(top: mq.height * 0.02),
-                  itemCount: dataList.length,
+                  itemCount: _isSearching?_searchList.length:_dataList.length,
                   itemBuilder: (context, index) {
-                    return ChatUserCard(user: dataList[index]);
+                    return ChatUserCard(user:_isSearching?_searchList[index]: _dataList[index]);
                     // return Text('name: ${list[index]}');
                   },
                 );
