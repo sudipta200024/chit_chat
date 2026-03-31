@@ -1,11 +1,13 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chit_chat/models/chat_user.dart';
 import 'package:chit_chat/view/auth/login_screen.dart';
 import 'package:chit_chat/main.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:image_picker/image_picker.dart';
 import '../api/apis.dart';
 import '../helper/dialogs.dart';
 
@@ -19,6 +21,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey =
       GlobalKey<FormState>(); //ensures which state form fields are in
+  String? _image;
 
   @override
   Widget build(BuildContext context) {
@@ -72,27 +75,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(height: mq.height * 0.03, width: mq.width),
                   Stack(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(mq.width * .2),
-                        // ← half of .5 below
-                        child: CachedNetworkImage(
-                          width: mq.width * .4,
-                          height: mq.width * .4,
-                          fit: BoxFit.cover,
-                          imageUrl: Apis.me.image,
-                          placeholder: (context, url) =>
-                              CircularProgressIndicator(),
-                          errorWidget: (context, url, error) =>
-                              Icon(CupertinoIcons.person),
-                        ),
-                      ),
+                      _image != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                mq.width * .2,
+                              ),
+                              // ← half of .5 below
+                              child: Image.file(
+                                File(_image!),
+                                width: mq.width * .4,
+                                height: mq.width * .4,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                mq.width * .2,
+                              ),
+                              // ← half of .5 below
+                              child: CachedNetworkImage(
+                                width: mq.width * .4,
+                                height: mq.width * .4,
+                                fit: BoxFit.cover,
+                                imageUrl: Apis.me.image,
+                                placeholder: (context, url) =>
+                                    CircularProgressIndicator(),
+                                errorWidget: (context, url, error) =>
+                                    Icon(CupertinoIcons.person),
+                              ),
+                            ),
 
                       Positioned(
                         bottom: 5,
                         right: -5,
                         child: MaterialButton(
                           elevation: 0,
-                          onPressed: () {},
+                          onPressed: () {
+                            _showBottomSheet();
+                          },
                           shape: CircleBorder(),
                           color: Colors.white,
                           child: Icon(Icons.edit, color: Colors.black),
@@ -177,6 +197,99 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showBottomSheet() {
+    showModalBottomSheet(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(mq.width * .05),
+          topRight: Radius.circular(mq.width * .05),
+        ),
+      ),
+      context: context,
+      builder: (_) {
+        return ListView(
+          physics: NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          padding: EdgeInsets.symmetric(
+            vertical: mq.height * .02,
+            horizontal: mq.width * .03,
+          ),
+          children: [
+            Text(
+              'Select Profile Picture',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            SizedBox(height: mq.height * .04),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    elevation: 0,
+                    shape: CircleBorder(),
+                    fixedSize: Size(mq.width * .3, mq.width * .3),
+                    alignment: Alignment.center,
+                  ),
+                  onPressed: () async {
+                    final ImagePicker picker = ImagePicker();
+                    final XFile? image = await picker.pickImage(
+                      source: ImageSource.gallery,
+                    );
+                    if (image != null) {
+                      logger.i(
+                        'image path: ${image.path}--Mimetype: ${image.mimeType}',
+                      );
+                      setState(() {
+                        _image = image.path;
+                      });
+                      //hide bottom sheet
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Image.asset('assets/images/icons/add_image.png'),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    elevation: 0,
+                    shape: CircleBorder(),
+                    fixedSize: Size(mq.width * .3, mq.width * .3),
+                    alignment: Alignment.center,
+                  ),
+                  onPressed: ()async {
+                    final ImagePicker picker = ImagePicker();
+                    final XFile? image = await picker.pickImage(
+                      source: ImageSource.camera,
+                    );
+                    if (image != null) {
+                      logger.i('image path: ${image.path}--Mimetype: ${image.mimeType}');
+                      setState(() {
+                        _image = image.path;
+                      });
+                      Navigator.pop(context);
+                    }
+                    //hide bottom sheet
+
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Image.asset('assets/images/icons/photo_camera.png'),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: mq.height * .02),
+          ],
+        );
+      },
     );
   }
 }

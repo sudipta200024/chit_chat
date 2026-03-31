@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
         //exist fullscreen mode
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle(statusBarColor: Colors.transparent),
+          SystemUiOverlayStyle(systemNavigationBarColor: Colors.white),
         );
         //if authenticated then keep in the home
         if (Apis.auth.currentUser != null) {
