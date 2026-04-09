@@ -1,10 +1,10 @@
 import 'package:chit_chat/api/apis.dart';
 import 'package:chit_chat/view/auth/login_screen.dart';
-import 'package:chit_chat/main.dart';
 import 'package:chit_chat/view/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../main.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,39 +14,51 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    Future.delayed(Duration(seconds: 2), () {
-      setState(() {
-        //exist fullscreen mode
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle(systemNavigationBarColor: Colors.white),
+    //ui design
+    _initializeSystemUI();
+
+    // Navigate after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (Apis.auth.currentUser != null) {
+        logger.i('User already logged in: ${Apis.auth.currentUser!.email}');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
-        //if authenticated then keep in the home
-        if (Apis.auth.currentUser != null) {
-          logger.i('\n${Apis.auth.currentUser}');
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => HomeScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => LoginScreen()),
-          );
-        }
-      });
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
     });
+  }
+
+  // Method for Clean System UI setup
+  void _initializeSystemUI() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        // Transparent is better with edgeToEdge
+        systemNavigationBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        // Dark icons (good for light splash)
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     mq = MediaQuery.of(context).size;
+
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           //APP_icon animation
@@ -56,12 +68,12 @@ class _SplashScreenState extends State<SplashScreen> {
             left: mq.width * 0.22,
             child: Image.asset('assets/images/icons/app_icon.png'),
           ),
-          //login Button
+          // Text
           Positioned(
             bottom: mq.height * 0.1,
             width: mq.width * 0.75,
             left: mq.width * .15,
-            child: Text(
+            child: const Text(
               "Lets Chit Chat",
               textAlign: TextAlign.center,
               style: TextStyle(

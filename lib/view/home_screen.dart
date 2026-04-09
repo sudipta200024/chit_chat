@@ -119,19 +119,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 //connection loaded
                 case ConnectionState.active:
                 case ConnectionState.done:
-                  final data = snapshot
-                      .data
-                      ?.docs; // final data = snapshot.data?.docs[0].data();
-                  _dataList =
-                      data?.map((e) => ChatUser.fromJson(e.data())).toList() ??
-                      []; //for loop inside the data mapping
+                  final data = snapshot.data?.docs; // final data = snapshot.data?.docs[0].data();
+                  logger.e('data: ${data?.map((e) => (e.data()))}');//to check the structure of the data list to convert to a model
+                  _dataList = data?.map((e) => ChatUser.fromJson(e.data())).toList() ?? []; //for loop inside the data mapping
                   if (_dataList.isNotEmpty) {
                     return ListView.builder(
                       physics: BouncingScrollPhysics(),
                       padding: EdgeInsets.only(top: mq.height * 0.02),
                       itemCount: _isSearching?_searchList.length:_dataList.length,
                       itemBuilder: (context, index) {
-                        return ChatUserCard(user:_isSearching?_searchList[index]: _dataList[index]);
+                        return ChatUserCard(chatUser:_isSearching?_searchList[index]: _dataList[index]);
                         // return Text('name: ${list[index]}');
                       },
                     );

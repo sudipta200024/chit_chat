@@ -48,6 +48,7 @@ dependencies:
   #for image handling
   cached_network_image: ^3.4.1
   image_picker: ^1.2.1
+  cloudinary_public: ^0.23.1
 
 
 dev_dependencies:

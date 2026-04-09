@@ -135,7 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     //saves the new name input inside the me model
                     validator: (val) =>
                         val != null && val.isNotEmpty ? null : 'Required Field',
-                    initialValue: Apis.me.email,
+                    initialValue: Apis.me.name,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -147,7 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: mq.height * 0.04),
                   TextFormField(
-                    onSaved: (val) => Apis.me.about = val ?? '',
+                    onSaved: (val) => Apis.me.about = val ?? '',//saved inside ChatUser model
                     validator: (val) =>
                         val != null && val.isNotEmpty ? null : 'Required Field',
                     initialValue: Apis.me.about,
@@ -166,11 +166,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (_formKey.currentState!.validate()) {
                         FocusScope.of(context).unfocus();
                         _formKey.currentState!.save();
-                        Apis.updateUserInfo();
-                        Dialogs.showSnackBar(
-                          context,
-                          'Profile Updated Successfully',
-                        );
+                        if (_image != null) {
+                          _uploadImageAndUpdate();
+                        } else {
+                          Apis.updateUserInfo();
+                          Dialogs.showSnackBar(
+                            context,
+                            'Profile Updated Successfully',
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -238,7 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: () async {
                     final ImagePicker picker = ImagePicker();
                     final XFile? image = await picker.pickImage(
-                      source: ImageSource.gallery,
+                      source: ImageSource.gallery,imageQuality: 80
                     );
                     if (image != null) {
                       logger.i(
@@ -264,20 +268,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fixedSize: Size(mq.width * .3, mq.width * .3),
                     alignment: Alignment.center,
                   ),
-                  onPressed: ()async {
+                  onPressed: () async {
                     final ImagePicker picker = ImagePicker();
                     final XFile? image = await picker.pickImage(
-                      source: ImageSource.camera,
+                      source: ImageSource.camera,imageQuality: 80
                     );
                     if (image != null) {
-                      logger.i('image path: ${image.path}--Mimetype: ${image.mimeType}');
+                      logger.i(
+                        'image path: ${image.path}--Mimetype: ${image.mimeType}',
+                      );
                       setState(() {
                         _image = image.path;
                       });
                       Navigator.pop(context);
                     }
                     //hide bottom sheet
-
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -291,5 +296,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
+  }
+
+  Future<void> _uploadImageAndUpdate() async {
+    Dialogs.showProgressBar(context);
+    final imageUrl = await Apis.updateProfilePicture(_image!);
+    Navigator.pop(context);
+    if (imageUrl != null) {
+      await Apis.updateUserInfo();
+      setState(() {
+        _image = null;
+      });
+      Dialogs.showSnackBar(context, 'Profile Updated Successfully');
+    } else {
+      Dialogs.showSnackBar(
+        context,
+        'Failed to upload image. Please try again.',
+      );
+    }
   }
 }

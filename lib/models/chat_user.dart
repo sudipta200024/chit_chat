@@ -10,7 +10,7 @@ class ChatUser {
     required this.pushToken,
     required this.email,
   });
-  late final String image;
+  late  String image;
   late  String name;
   late  String about;
   late final String createdAt;
