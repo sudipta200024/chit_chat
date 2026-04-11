@@ -7,20 +7,23 @@ class ChatMessageModel {
     required this.sent,
     required this.fromId,
   });
+
   late final String msg;
   late final String toId;
   late final String read;
-  late final String type;
+  late final Type type;//sets type based on the message type
   late final String sent;
   late final String fromId;
 
-  ChatMessageModel.fromJson(Map<String, dynamic> json){
-    msg = json['msg'];
-    toId = json['toId'];
-    read = json['read'];
-    type = json['type'];
-    sent = json['sent'];
-    fromId = json['fromId'];
+  ChatMessageModel.fromJson(Map<String, dynamic> json) {
+    msg = json['msg'].toString();
+    toId = json['toId'].toString();
+    read = json['read'].toString();
+    type = json['type'].toString() == Type.image.name
+        ? Type.image
+        : Type.text; //reads the type if Type=image then Type set image else text
+    sent = json['sent'].toString();
+    fromId = json['fromId'].toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -34,3 +37,6 @@ class ChatMessageModel {
     return _data;
   }
 }
+
+enum Type { text, image }//for type control of msg is image or text
+

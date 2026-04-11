@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:chit_chat/main.dart';
+import 'package:chit_chat/widget/message_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../api/apis.dart';
@@ -17,6 +18,8 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  List<ChatMessageModel> _msgList = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,16 +45,43 @@ class _ChatScreenState extends State<ChatScreen> {
                   case ConnectionState.active:
                   case ConnectionState.done:
                     final data = snapshot.data?.docs;
-                    logger.i('message: ${jsonEncode(data?.map((e) => e.data()).toList())}');
+                    logger.i(
+                      'message: ${jsonEncode(
+                          data?.map((e) => e.data()).toList())}',
+                    );
                     //now create a modal for messageModel to put it in the msg list
-                    final _msgList = data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
+                    // final _msgList = data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
+                    _msgList.add(
+                      ChatMessageModel(
+                        msg: 'msg1',
+                        toId: 'toId',
+                        read: 'read',
+                        type: Type.text,
+                        sent: 'sent',
+                        fromId: Apis.currentUser.uid,
+                      ),
+                    );
+                    _msgList.add(
+                      ChatMessageModel(
+                        msg: 'msg2',
+                        toId: Apis.currentUser.uid,
+                        read: 'read',
+                        type: Type.text,
+                        sent: 'sent',
+                        fromId: 'fromId',
+                      ),
+                    );
                     if (_msgList.isNotEmpty) {
                       return ListView.builder(
                         physics: BouncingScrollPhysics(),
                         padding: EdgeInsets.only(top: mq.height * 0.02),
                         itemCount: _msgList.length,
                         itemBuilder: (context, index) {
-                          return Text('message: ${_msgList[index].msg}');
+                          return MessageCard(chatMessageModel: _msgList[index]);
+                          // return Card(
+                          //     child: ListTile()
+                          //)
+                          // return Text('message: ${_msgList[index].msg}');
                         },
                       );
                     } else {

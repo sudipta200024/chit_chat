@@ -2,12 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chit_chat/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import '../models/chat_user.dart';
 import '../view/auth/chat_screen.dart';
 
 class ChatUserCard extends StatefulWidget {
-  final ChatUser chatUser;
+  final ChatUser chatUser;//declaring chatUser model as its a passing data
 
   const ChatUserCard({super.key, required this.chatUser});
 
@@ -16,6 +15,8 @@ class ChatUserCard extends StatefulWidget {
 }
 
 class _ChatUserCardState extends State<ChatUserCard> {
+
+
   @override
   Widget build(BuildContext context) {
     return Card(
