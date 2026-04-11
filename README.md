@@ -117,11 +117,7 @@ Splash Screen
 
 ---
 
-## 📸 Screenshots
 
-| Splash | Login | Home | Chat |
-|---|---|---|---|
-| (add screenshot) | (add screenshot) | (add screenshot) | (add screenshot) |
 
 ---
 
