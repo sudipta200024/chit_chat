@@ -89,6 +89,37 @@ Splash Screen
 
 ---
 
+## 🗄️ Firestore Structure
+
+```
+users (collection)
+└── {userId} (document)
+    ├── id           : String
+    ├── name         : String
+    ├── email        : String
+    ├── image        : String  (Cloudinary URL)
+    ├── about        : String
+    ├── created_at   : String
+    ├── last_active  : String
+    ├── is_online    : Boolean
+    └── push_token   : String
+
+messages (collection)
+└── {conversationId} (document)
+    └── messages (subcollection)
+        └── {messageId} (document)
+            ├── msg      : String
+            ├── toId     : String
+            ├── fromId   : String
+            ├── read     : String
+            ├── type     : String  ("text" or "image")
+            └── sent     : String
+```
+
+> ⚠️ Firestore does NOT auto-create collections. You must manually create `users` and `messages` collections in your Firebase console after setup.
+
+---
+
 ## 🚀 Setup & Installation
 
 1. **Clone the repository**
@@ -117,7 +148,11 @@ Splash Screen
 
 ---
 
+## 📸 Screenshots
 
+| Splash | Login | Home | Chat |
+|---|---|---|---|
+| (add screenshot) | (add screenshot) | (add screenshot) | (add screenshot) |
 
 ---
 
