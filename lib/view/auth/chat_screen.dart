@@ -51,9 +51,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                     //now create a modal for messageModel to put it in the msg list
                     // final _msgList = data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
+                    _msgList.clear();
                     _msgList.add(
                       ChatMessageModel(
-                        msg: 'msg1',
+                        msg: 'msg144444444444444444444444444444444444444444444444',
                         toId: 'toId',
                         read: 'read',
                         type: Type.text,
@@ -63,7 +64,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                     _msgList.add(
                       ChatMessageModel(
-                        msg: 'msg2',
+                        msg: 'msg2444444444444444444444444444444444444444444444444',
                         toId: Apis.currentUser.uid,
                         read: 'read',
                         type: Type.text,
@@ -77,7 +78,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         padding: EdgeInsets.only(top: mq.height * 0.02),
                         itemCount: _msgList.length,
                         itemBuilder: (context, index) {
-                          return MessageCard(chatMessageModel: _msgList[index]);
+                          return MessageCard(chatMessageModel: _msgList[index],chatUser: widget.chatUser,);//two types of passing could have used same
                           // return Card(
                           //     child: ListTile()
                           //)
