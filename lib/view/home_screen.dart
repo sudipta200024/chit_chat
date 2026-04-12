@@ -33,17 +33,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: PopScope(
-        canPop: false,// denied auto back button
-        onPopInvokedWithResult: (didPop,result){//as canPop=false then didPop=false cause screen wont pop to login screen
-          if(_isSearching){
+        canPop: false, // denied auto back button
+        onPopInvokedWithResult: (didPop, result) {
+          //as canPop=false then didPop=false cause screen wont pop to login screen
+          if (_isSearching) {
             setState(() {
-              _isSearching=!_isSearching;//after pressing the button it will stop searching hence _isSearching=false
+              _isSearching =
+                  !_isSearching; //after pressing the button it will stop searching hence _isSearching=false
             });
-          }else{
-            Navigator.pop(context);//if search button is not touched then pop the screen
+          } else {
+            Navigator.pop(
+              context,
+            ); //if search button is not touched then pop the screen
           }
-        }
-        ,
+        },
         child: Scaffold(
           appBar: AppBar(
             leading: Icon(Icons.home_outlined),
@@ -62,7 +65,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => ProfileScreen(user: Apis.me)),
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(user: Apis.me),
+                    ),
                   );
                 },
                 icon: Icon(Icons.more_vert_outlined),
@@ -77,17 +82,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     autofocus: true,
                     //search Logic
-                    onChanged: (val){
+                    onChanged: (val) {
                       _searchList.clear();
-                      for(var i in _dataList){
-                        if(i.name.toLowerCase().contains(val.toLowerCase()) || i.email.toLowerCase().contains(val.toLowerCase())){
+                      for (var i in _dataList) {
+                        if (i.name.toLowerCase().contains(val.toLowerCase()) ||
+                            i.email.toLowerCase().contains(val.toLowerCase())) {
                           _searchList.add(i);
                           setState(() {
                             _searchList;
                           });
                         }
                       }
-                    }
+                    },
                   )
                 : Text('Chit Chat'),
           ),
@@ -119,16 +125,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 //connection loaded
                 case ConnectionState.active:
                 case ConnectionState.done:
-                  final data = snapshot.data?.docs; // final data = snapshot.data?.docs[0].data();
-                  logger.e('data: ${data?.map((e) => (e.data()))}');//to check the structure of the data list to convert to a model
-                  _dataList = data?.map((e) => ChatUser.fromJson(e.data())).toList() ?? []; //for loop inside the data mapping
+                  final data = snapshot
+                      .data
+                      ?.docs; // final data = snapshot.data?.docs[0].data();
+                  logger.e(
+                    'data: ${data?.map((e) => (e.data()))}',
+                  ); //to check the structure of the data list to convert to a model
+                  _dataList =
+                      data?.map((e) => ChatUser.fromJson(e.data())).toList() ??
+                      []; //for loop inside the data mapping
                   if (_dataList.isNotEmpty) {
                     return ListView.builder(
                       physics: BouncingScrollPhysics(),
                       padding: EdgeInsets.only(top: mq.height * 0.02),
-                      itemCount: _isSearching?_searchList.length:_dataList.length,
+                      itemCount: _isSearching
+                          ? _searchList.length
+                          : _dataList.length,
                       itemBuilder: (context, index) {
-                        return ChatUserCard(chatUser:_isSearching?_searchList[index]: _dataList[index]);
+                        return ChatUserCard(
+                          chatUser: _isSearching
+                              ? _searchList[index]
+                              : _dataList[index],
+                        ); //clicked on the user name will select the indexed id and pass it to chatUserCard
                         // return Text('name: ${list[index]}');
                       },
                     );
@@ -136,7 +154,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     return Center(
                       child: Text(
                         'No Connection Found!!',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     );
                   }

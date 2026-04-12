@@ -1,3 +1,4 @@
+import 'package:chit_chat/models/chat_message_model.dart';
 import 'package:chit_chat/models/chat_user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
@@ -59,7 +60,8 @@ class Apis {
         .set(chatUser.toJson());
     //Firestore -> toJson() ->  Map  -> set() ->  Firestore DB
   }
-            ///get all the users
+
+  ///get all the users
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUser() {
     //could have used future builder but i want snapshot of data
     return firestore
@@ -68,7 +70,7 @@ class Apis {
         .snapshots();
   }
 
-          ///get all the message
+  ///get all the message
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessage() {
     return firestore.collection('messages').snapshots();
   }
@@ -105,6 +107,53 @@ class Apis {
       logger.e('Cloudinary error: $e');
     }
     return null;
+  }
+
+  //apis for sending and receiving messages
+
+  //chats(collection)->conversationID(doc)->messages(collection)->message(doc)
+
+  static String getConversationID(String id) {
+    //gets the id that will be passed from getAllMessage
+    //always creates unique and same id for both at same time cause it sorts the id
+    if (currentUser.uid.compareTo(id) < 0) {
+      //if current id is smaller than userId (id,passing parameter of chatUser id)then currentuid_userID
+      return '${currentUser.uid}_$id';
+    } else {
+      return '${id}_${currentUser.uid}'; //if current id is bigger than userId (id,passing parameter of chatUser id)then userID_currentuid
+
+      // You open chat:    compareTo() → "AAA_BBB" ✅
+      // userId or Friend opens chat: compareTo() → "AAA_BBB" ✅ same!
+    }
+  }
+
+  //get all messages
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
+    ChatUser chatUser,
+  ) {
+    //gets the id that will be passed from messageCard
+    return firestore
+        .collection('chats/${getConversationID(chatUser.id)}/messages')
+        .snapshots();
+  }
+
+  static Future<void> sendMessage(ChatUser chatUser, String msg) async {
+    final time = DateTime.now().millisecondsSinceEpoch.toString();
+
+    final ChatMessageModel chatMessageModel = ChatMessageModel(
+      msg: msg,
+      toId: chatUser.id,
+      //passing parameter of chatUser id cause current id wants to sent to chatUser
+      read: '',
+      type: Type.text,
+      sent: time,
+      fromId: currentUser.uid,
+    );
+
+    await firestore
+        .collection('chats/${getConversationID(chatUser.id)}/messages')
+        .doc(time)
+        .set(chatMessageModel.toJson());
   }
 }
 

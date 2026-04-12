@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chit_chat/api/apis.dart';
 import 'package:chit_chat/models/chat_message_model.dart';
 import 'package:flutter/material.dart';
@@ -102,8 +103,12 @@ class _MessageCardState extends State<MessageCard> {
           child: CircleAvatar(
             radius: 14,
             backgroundColor: Colors.grey.shade300,
-            backgroundImage: NetworkImage(widget.chatUser.image), // pass chatUser image
-            child: Icon(Icons.person, size: 16, color: Colors.grey),//if no image then shows this icon
+            backgroundImage: widget.chatUser.image.isNotEmpty
+                ? CachedNetworkImageProvider(widget.chatUser.image)
+                : null,
+            child: widget.chatUser.image.isEmpty
+                ? Icon(Icons.person, size: 16, color: Colors.grey)
+                : null,//if no image then shows this icon
           ),
         ),
         Column(

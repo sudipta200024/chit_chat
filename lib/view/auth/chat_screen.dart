@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chit_chat/main.dart';
 import 'package:chit_chat/widget/message_card.dart';
 import 'package:flutter/cupertino.dart';
@@ -32,6 +33,8 @@ class _ChatScreenState extends State<ChatScreen> {
           child: _appBar(),
         ),
       ),
+      backgroundColor: Color(0xFFECE5DD),
+
       body: Column(
         children: [
           Expanded(
@@ -217,7 +220,7 @@ class _ChatScreenState extends State<ChatScreen> {
             radius: mq.width * 0.05,
             backgroundColor: Colors.grey.shade200,
             backgroundImage: widget.chatUser.image.isNotEmpty
-                ? NetworkImage(widget.chatUser.image)
+                ? CachedNetworkImageProvider(widget.chatUser.image)
                 : null,
             child: widget.chatUser.image.isEmpty
                 ? const Icon(CupertinoIcons.person, size: 22)

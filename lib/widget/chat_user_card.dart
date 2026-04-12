@@ -6,7 +6,7 @@ import '../models/chat_user.dart';
 import '../view/auth/chat_screen.dart';
 
 class ChatUserCard extends StatefulWidget {
-  final ChatUser chatUser;//declaring chatUser model as its a passing data
+  final ChatUser chatUser; //declaring chatUser model as its a passing data
 
   const ChatUserCard({super.key, required this.chatUser});
 
@@ -15,8 +15,6 @@ class ChatUserCard extends StatefulWidget {
 }
 
 class _ChatUserCardState extends State<ChatUserCard> {
-
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -31,7 +29,9 @@ class _ChatUserCardState extends State<ChatUserCard> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => ChatScreen(chatUser: widget.chatUser,)),//need widget as chatUser is outside the class
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(chatUser: widget.chatUser),//this is the selected user only with its data using the model
+            ), //need widget as chatUser is outside the class
           );
         },
         child: ListTile(
