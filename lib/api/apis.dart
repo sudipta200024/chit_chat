@@ -70,11 +70,6 @@ class Apis {
         .snapshots();
   }
 
-  ///get all the message
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessage() {
-    return firestore.collection('messages').snapshots();
-  }
-
   static Future<void> updateUserInfo() async {
     return await firestore.collection('users').doc(currentUser.uid).update({
       'name': me.name, //saved info from textfield inside ChatUser model
@@ -109,7 +104,8 @@ class Apis {
     return null;
   }
 
-  //apis for sending and receiving messages
+
+                                            //apis for sending and receiving messages
 
   //chats(collection)->conversationID(doc)->messages(collection)->message(doc)
 
@@ -128,32 +124,35 @@ class Apis {
   }
 
   //get all messages
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
-    ChatUser chatUser,
-  ) {
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser chatUser,) {
+    //passing the parameter of chatUser id cause current id wants to sent to chatUser
     //gets the id that will be passed from messageCard
     return firestore
         .collection('chats/${getConversationID(chatUser.id)}/messages')
         .snapshots();
   }
-
+//send message logic
   static Future<void> sendMessage(ChatUser chatUser, String msg) async {
-    final time = DateTime.now().millisecondsSinceEpoch.toString();
+    try {
+      final time = DateTime.now().millisecondsSinceEpoch.toString();
 
-    final ChatMessageModel chatMessageModel = ChatMessageModel(
-      msg: msg,
-      toId: chatUser.id,
-      //passing parameter of chatUser id cause current id wants to sent to chatUser
-      read: '',
-      type: Type.text,
-      sent: time,
-      fromId: currentUser.uid,
-    );
+      final ChatMessageModel chatMessageModel = ChatMessageModel(
+        msg: msg,//text editing controllers message
+        toId: chatUser.id, //passing parameter of chatUser id cause current id wants to sent to chatUser
+        read: '',
+        type: Type.text,
+        sent: time,
+        fromId: currentUser.uid,
+      );
 
-    await firestore
-        .collection('chats/${getConversationID(chatUser.id)}/messages')
-        .doc(time)
-        .set(chatMessageModel.toJson());
+      await firestore
+          .collection('chats/${getConversationID(chatUser.id)}/messages')
+          .doc(time)
+          .set(chatMessageModel.toJson());
+      logger.i('message sent$msg');
+    } catch (e) {
+      logger.e(' sendMessage error: $e');
+    }
   }
 }
 

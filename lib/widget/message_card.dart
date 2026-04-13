@@ -3,6 +3,7 @@ import 'package:chit_chat/api/apis.dart';
 import 'package:chit_chat/models/chat_message_model.dart';
 import 'package:flutter/material.dart';
 
+import '../helper/time_format.dart';
 import '../main.dart';
 import '../models/chat_user.dart';
 
@@ -24,6 +25,8 @@ class _MessageCardState extends State<MessageCard> {
         ? _greenMessage()
         : _whiteMessage();
   }
+  //time formate
+
 
   Widget _greenMessage() {
     // my msg
@@ -74,7 +77,7 @@ class _MessageCardState extends State<MessageCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        widget.chatMessageModel.sent, // message timestamp field
+                        TimeFormat().formatTime(widget.chatMessageModel.sent),// message timestamp field
                         style: TextStyle(
                           color: Colors.black45,
                           fontSize: 11,
@@ -152,7 +155,7 @@ class _MessageCardState extends State<MessageCard> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    widget.chatMessageModel.sent, // Message timestamp field
+                    TimeFormat().formatTime(widget.chatMessageModel.sent), // Message timestamp field
                     style: TextStyle(
                       color: Colors.black45,
                       fontSize: 11,

@@ -31,7 +31,7 @@ class ChatMessageModel {
     _data['msg'] = msg;
     _data['toId'] = toId;
     _data['read'] = read;
-    _data['type'] = type;
+    _data['type'] = type.name;
     _data['sent'] = sent;
     _data['fromId'] = fromId;
     return _data;

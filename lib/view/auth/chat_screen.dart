@@ -20,6 +20,8 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   List<ChatMessageModel> _msgList = [];
+  final TextEditingController _messageController = TextEditingController();
+
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +41,9 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: StreamBuilder(
-              stream: Apis.getAllMessage(),
+              stream: Apis.getAllMessages(widget.chatUser),
               builder: (context, snapshot) {
-                switch (snapshot.connectionState) {
+                switch (snapshot.connectionState) {//check connection state
                   case ConnectionState.waiting:
                   case ConnectionState.none:
                     return Center(child: CircularProgressIndicator());
@@ -49,39 +51,21 @@ class _ChatScreenState extends State<ChatScreen> {
                   case ConnectionState.done:
                     final data = snapshot.data?.docs;
                     logger.i(
-                      'message: ${jsonEncode(
-                          data?.map((e) => e.data()).toList())}',
+                      'message: ${jsonEncode(data?.map((e) => e.data()).toList())}',
                     );
-                    //now create a modal for messageModel to put it in the msg list
-                    // final _msgList = data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
-                    _msgList.clear();
-                    _msgList.add(
-                      ChatMessageModel(
-                        msg: 'msg144444444444444444444444444444444444444444444444',
-                        toId: 'toId',
-                        read: 'read',
-                        type: Type.text,
-                        sent: 'sent',
-                        fromId: Apis.currentUser.uid,
-                      ),
-                    );
-                    _msgList.add(
-                      ChatMessageModel(
-                        msg: 'msg2444444444444444444444444444444444444444444444444',
-                        toId: Apis.currentUser.uid,
-                        read: 'read',
-                        type: Type.text,
-                        sent: 'sent',
-                        fromId: 'fromId',
-                      ),
-                    );
+                    //now create a model for messageModel to put it in the msg list
+                    final _msgList = data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
+
                     if (_msgList.isNotEmpty) {
                       return ListView.builder(
                         physics: BouncingScrollPhysics(),
                         padding: EdgeInsets.only(top: mq.height * 0.02),
                         itemCount: _msgList.length,
                         itemBuilder: (context, index) {
-                          return MessageCard(chatMessageModel: _msgList[index],chatUser: widget.chatUser,);//two types of passing could have used same
+                          return MessageCard(
+                            chatMessageModel: _msgList[index],//how many msg bubble
+                            chatUser: widget.chatUser,//to see frnds profile icon
+                          ); //two types of passing could have used same
                           // return Card(
                           //     child: ListTile()
                           //)
@@ -168,9 +152,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   IconButton(
                     onPressed: () {},
                     icon: Icon(Icons.emoji_emotions_outlined),
-                  ),
+                  ), //emoji
                   Expanded(
                     child: TextField(
+                      controller: _messageController,
                       keyboardType: TextInputType.multiline,
                       maxLines: null,
                       decoration: InputDecoration(
@@ -182,22 +167,30 @@ class _ChatScreenState extends State<ChatScreen> {
                   IconButton(
                     onPressed: () {},
                     icon: Icon(Icons.image_outlined),
-                  ),
+                  ), //gallery
                   IconButton(
                     onPressed: () {},
                     icon: Icon(Icons.camera_alt_outlined),
-                  ),
+                  ), //camera
                 ],
               ),
             ),
           ),
           IconButton(
-            onPressed: () {},
+            //send button
+            onPressed: () {
+              if (_messageController.text.isNotEmpty) {
+                Apis.sendMessage(
+                  widget.chatUser, //ChatUser(friends id) parameter pass
+                  _messageController.text, //msg parameter pass
+                );
+                _messageController.clear();
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.greenAccent,
               shape: CircleBorder(),
             ),
-
             icon: Icon(Icons.send_outlined),
           ),
         ],
