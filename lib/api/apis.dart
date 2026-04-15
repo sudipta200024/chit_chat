@@ -104,8 +104,7 @@ class Apis {
     return null;
   }
 
-
-                                            //apis for sending and receiving messages
+  //apis for sending and receiving messages
 
   //chats(collection)->conversationID(doc)->messages(collection)->message(doc)
 
@@ -124,21 +123,26 @@ class Apis {
   }
 
   //get all messages
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser chatUser,) {
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
+    ChatUser chatUser,
+  ) {
     //passing the parameter of chatUser id cause current id wants to sent to chatUser
     //gets the id that will be passed from messageCard
     return firestore
         .collection('chats/${getConversationID(chatUser.id)}/messages')
         .snapshots();
   }
-//send message logic
+
+  //send message logic
   static Future<void> sendMessage(ChatUser chatUser, String msg) async {
     try {
       final time = DateTime.now().millisecondsSinceEpoch.toString();
 
       final ChatMessageModel chatMessageModel = ChatMessageModel(
-        msg: msg,//text editing controllers message
-        toId: chatUser.id, //passing parameter of chatUser id cause current id wants to sent to chatUser
+        msg: msg,
+        //text editing controllers message
+        toId: chatUser.id,
+        //passing parameter of chatUser id cause current id wants to sent to chatUser
         read: '',
         type: Type.text,
         sent: time,
@@ -146,13 +150,29 @@ class Apis {
       );
 
       await firestore
-          .collection('chats/${getConversationID(chatUser.id)}/messages')
+          .collection('chats/${getConversationID(chatUser.id)}/messages')//senders ID
           .doc(time)
           .set(chatMessageModel.toJson());
       logger.i('message sent$msg');
     } catch (e) {
       logger.e(' sendMessage error: $e');
     }
+  }
+
+  //update message read status with blue tik
+  static Future<void> updateReadMessageStatus(
+    ChatMessageModel chatMessageModel,
+  ) async {
+    logger.e(chatMessageModel.fromId);
+    await firestore
+        .collection(
+          'chats/${getConversationID(chatMessageModel.fromId)}/messages',//senders id
+
+          // chatMessageModel.fromId = sender’s UID (John’s ID here)
+          // chatMessageModel.toId   = receiver’s UID (my ID here, since I received it)
+        )
+        .doc(chatMessageModel.sent)
+        .update({'read': DateTime.now().millisecondsSinceEpoch.toString()});//update read = current time
   }
 }
 

@@ -84,7 +84,7 @@ class _MessageCardState extends State<MessageCard> {
                         ),
                       ),
                       SizedBox(width: 4),
-                      Icon(Icons.done_all, size: 16, color: Color(0xFF53BDEB)), // blue ticks
+                      widget.chatMessageModel.read.isNotEmpty ? Icon(Icons.done_all, size: 16, color: Color(0xFF53BDEB)):Icon(Icons.done_all, size: 16, color: Colors.grey), // blue ticks
                     ],
                   ),
                 ],
@@ -98,6 +98,10 @@ class _MessageCardState extends State<MessageCard> {
 
   Widget _whiteMessage() {
     // friend's msg
+    //update read while enters
+    if(widget.chatMessageModel.read.isEmpty){
+      Apis.updateReadMessageStatus(widget.chatMessageModel);
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [

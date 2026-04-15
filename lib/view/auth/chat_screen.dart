@@ -19,6 +19,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  final ScrollController _scrollController = ScrollController();
   List<ChatMessageModel> _msgList = [];
   final TextEditingController _messageController = TextEditingController();
 
@@ -26,6 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         automaticallyImplyLeading: false, // We control the back button
         backgroundColor: Colors.white38, // This removes the black status bar
@@ -57,21 +59,25 @@ class _ChatScreenState extends State<ChatScreen> {
                     final _msgList = data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
 
                     if (_msgList.isNotEmpty) {
-                      return ListView.builder(
+                      // build the list first
+                      final listView = ListView.builder(
+                        controller: _scrollController,
                         physics: BouncingScrollPhysics(),
                         padding: EdgeInsets.only(top: mq.height * 0.02),
                         itemCount: _msgList.length,
                         itemBuilder: (context, index) {
                           return MessageCard(
-                            chatMessageModel: _msgList[index],//how many msg bubble
-                            chatUser: widget.chatUser,//to see frnds profile icon
-                          ); //two types of passing could have used same
-                          // return Card(
-                          //     child: ListTile()
-                          //)
-                          // return Text('message: ${_msgList[index].msg}');
+                            chatMessageModel: _msgList[index],
+                            chatUser: widget.chatUser,
+                          );
                         },
                       );
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (_scrollController.hasClients) {
+                          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                        }
+                      });
+                      return listView;
                     } else {
                       return Center(
                         child: Text(
@@ -83,6 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       );
                     }
+
                 }
               },
             ),
