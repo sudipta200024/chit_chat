@@ -150,7 +150,9 @@ class Apis {
       );
 
       await firestore
-          .collection('chats/${getConversationID(chatUser.id)}/messages')//senders ID
+          .collection(
+            'chats/${getConversationID(chatUser.id)}/messages',
+          ) //senders ID
           .doc(time)
           .set(chatMessageModel.toJson());
       logger.i('message sent$msg');
@@ -166,13 +168,23 @@ class Apis {
     logger.e(chatMessageModel.fromId);
     await firestore
         .collection(
-          'chats/${getConversationID(chatMessageModel.fromId)}/messages',//senders id
-
+          'chats/${getConversationID(chatMessageModel.fromId)}/messages', //senders id
           // chatMessageModel.fromId = sender’s UID (John’s ID here)
           // chatMessageModel.toId   = receiver’s UID (my ID here, since I received it)
         )
         .doc(chatMessageModel.sent)
-        .update({'read': DateTime.now().millisecondsSinceEpoch.toString()});//update read = current time
+        .update({
+          'read': DateTime.now().millisecondsSinceEpoch.toString(),
+        }); //update read = current time
+  }
+
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getLastMessage(ChatUser chatUser,) {
+    //passing the parameter of chatUser id cause current id wants to sent to chatUser
+    //gets the id that will be passed from messageCard
+    return firestore
+        .collection('chats/${getConversationID(chatUser.id)}/messages').orderBy('sent',descending: true)//descending order to get the latest message
+        .limit(1)//only get the latest message for less load time
+        .snapshots();
   }
 }
 

@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chit_chat/api/apis.dart';
 import 'package:chit_chat/main.dart';
+import 'package:chit_chat/models/chat_message_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/chat_user.dart';
@@ -8,6 +12,8 @@ import '../view/auth/chat_screen.dart';
 class ChatUserCard extends StatefulWidget {
   final ChatUser chatUser; //declaring chatUser model as its a passing data
 
+
+
   const ChatUserCard({super.key, required this.chatUser});
 
   @override
@@ -15,6 +21,9 @@ class ChatUserCard extends StatefulWidget {
 }
 
 class _ChatUserCardState extends State<ChatUserCard> {
+
+  ChatMessageModel? _chatMessageModel;
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -34,38 +43,49 @@ class _ChatUserCardState extends State<ChatUserCard> {
             ), //need widget as chatUser is outside the class
           );
         },
-        child: ListTile(
-          // leading: CircleAvatar(child: Icon(CupertinoIcons.person)),
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(mq.height * .07),
-            child: CachedNetworkImage(
-              width: mq.width * .14,
-              height: mq.height * .14,
-              fit: BoxFit.cover,
-              imageUrl: widget.chatUser.image,
-              placeholder: (context, url) => CircularProgressIndicator(),
-              errorWidget: (context, url, error) => Icon(CupertinoIcons.person),
-            ),
-          ),
+        child: StreamBuilder(stream: Apis.getLastMessage(widget.chatUser), builder: ( context, snapshot){
 
-          title: Text(
-            widget.chatUser.name,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-          ),
-          subtitle: Text(
-            widget.chatUser.about,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Container(
-            height: 10,
-            width: 10,
-            decoration: BoxDecoration(
-              color: widget.chatUser.isOnline ? Colors.green : Colors.grey,
-              shape: BoxShape.circle,
+          final data = snapshot.data?.docs;
+          final _lastMsgList = data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
+          if(_lastMsgList.isNotEmpty){
+            _chatMessageModel = _lastMsgList[0];
+          }
+          return ListTile(
+            // leading: CircleAvatar(child: Icon(CupertinoIcons.person)),
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(mq.height * .07),
+              child: CachedNetworkImage(
+                width: mq.width * .14,
+                height: mq.height * .14,
+                fit: BoxFit.cover,
+                imageUrl: widget.chatUser.image,
+                placeholder: (context, url) => CircularProgressIndicator(),
+                errorWidget: (context, url, error) => Icon(CupertinoIcons.person),
+              ),
             ),
-          ),
-        ),
+
+            title: Text(
+              widget.chatUser.name,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+            subtitle:
+            Text(
+              _chatMessageModel!=null ? _chatMessageModel!.msg: //if lastMessageList empty then _chatMessageModel empty
+              widget.chatUser.about,//if lastMsg is empty then show about
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Container(
+              height: 10,
+              width: 10,
+              decoration: BoxDecoration(
+                color: widget.chatUser.isOnline ? Colors.green : Colors.grey,
+                shape: BoxShape.circle,
+              ),
+            ),
+          );
+        }
+        )
       ),
     );
   }
