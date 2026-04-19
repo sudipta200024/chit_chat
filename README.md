@@ -157,13 +157,13 @@ messages (collection)
 
 <div align="center">
 
-| Login Screen | Home Screen (User List) | Chat Screen |
-|--------------|--------------------------|-------------|
-| ![Login](screenshots/1_login.png) | ![Home](screenshots/2_home.png) | ![Chat](screenshots/3_chat.png) |
+| Login Screen              | Home Screen              | Chat / Message Screen      |
+|---------------------------|--------------------------|----------------------------|
+| ![Login](screenshots/google_login_auth.png) | ![Home](screenshots/home_screen.png) | ![Chat](screenshots/message_screen.png) |
 
-| Online Status | Profile Screen | Image Message |
-|----------------|---------------|---------------|
-| ![Online](screenshots/4_online.png) | ![Profile](screenshots/5_profile.png) | ![Image Msg](screenshots/6_image.png) |
+| Profile Screen            | Splash Screen            |
+|---------------------------|--------------------------|
+| ![Profile](screenshots/profile_screen.png) | ![Splash](screenshots/splash_screen.png) |
 
 </div>
 
