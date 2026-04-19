@@ -1,8 +1,4 @@
-# 💬 Chit Chat — Real-Time Flutter Chat App
 
-A full-featured, real-time chat application built with Flutter and Firebase, supporting Google Sign-In, live messaging, user profiles, and online/offline status tracking.
-
----
 # 💬 Chit Chat — Real-Time Flutter Chat App
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/sudipta200024/chit_chat)
