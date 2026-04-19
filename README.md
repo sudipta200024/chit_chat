@@ -153,7 +153,19 @@ messages (collection)
 
 ---
 
+## 📸 Screenshots
 
+<div align="center">
+
+| Login Screen | Home Screen (User List) | Chat Screen |
+|--------------|--------------------------|-------------|
+| ![Login](screenshots/1_login.png) | ![Home](screenshots/2_home.png) | ![Chat](screenshots/3_chat.png) |
+
+| Online Status | Profile Screen | Image Message |
+|----------------|---------------|---------------|
+| ![Online](screenshots/4_online.png) | ![Profile](screenshots/5_profile.png) | ![Image Msg](screenshots/6_image.png) |
+
+</div>
 
 ---
 
