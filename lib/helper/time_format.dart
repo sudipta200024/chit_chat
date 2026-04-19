@@ -7,4 +7,5 @@ class TimeFormat {
     final period = dt.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
   }
+
 }
