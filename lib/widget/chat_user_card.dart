@@ -102,7 +102,10 @@ class _ChatUserCardState extends State<ChatUserCard> {
                         shape: BoxShape.circle,
                       ),
                     )
-                  : Text(TimeFormat().formatTime(_chatMessageModel!.sent)),
+                  : Text(TimeFormat().getLastMessageTime(_chatMessageModel!.sent),style: TextStyle(
+                color: Colors.black26,
+                fontSize: 12,
+              ),),
             );
           },
         ),
