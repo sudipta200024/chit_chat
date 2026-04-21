@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chit_chat/helper/time_format.dart';
 import 'package:chit_chat/main.dart';
 import 'package:chit_chat/widget/message_card.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
 import '../../api/apis.dart';
 import '../../models/chat_message_model.dart';
@@ -21,121 +24,137 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   List<ChatMessageModel> _msgList = [];
-  final TextEditingController _messageController = TextEditingController();
-
+  final TextEditingController _textEditingController = TextEditingController();
+  bool _showEmoji = false;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        automaticallyImplyLeading: false, // We control the back button
-        backgroundColor: Colors.white38, // This removes the black status bar
-        elevation: 1,
-        flexibleSpace: SafeArea(
-          // ← SafeArea ONLY here
-          child: _appBar(),
-        ),
-      ),
-      backgroundColor: Color(0xFFECE5DD),
-
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder(
-              stream: Apis.getAllMessages(widget.chatUser),
-              builder: (context, snapshot) {
-                switch (snapshot.connectionState) {//check connection state
-                  case ConnectionState.waiting:
-                  case ConnectionState.none:
-                    return Center(child: CircularProgressIndicator());
-                  case ConnectionState.active:
-                  case ConnectionState.done:
-                    final data = snapshot.data?.docs;
-                    logger.i(
-                      'message: ${jsonEncode(data?.map((e) => e.data()).toList())}',
-                    );
-                    //now create a model for messageModel to put it in the msg list
-                    final _msgList = data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
-
-                    if (_msgList.isNotEmpty) {
-                      // build the list first
-                      final listView = ListView.builder(
-                        controller: _scrollController,
-                        physics: BouncingScrollPhysics(),
-                        padding: EdgeInsets.only(top: mq.height * 0.02),
-                        itemCount: _msgList.length,
-                        itemBuilder: (context, index) {
-                          return MessageCard(
-                            chatMessageModel: _msgList[index],
-                            chatUser: widget.chatUser,
-                          );
-                        },
-                      );
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (_scrollController.hasClients) {
-                          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-                        }
-                      });
-                      return listView;
-                    } else {
-                      return Center(
-                        child: Text(
-                          '👋 Wave to say Hi!!',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }
-
-                }
-              },
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: PopScope(
+        canPop: false, // denied auto back button
+        onPopInvokedWithResult: (didPop, result) {
+          //as canPop=false then didPop=false cause screen wont pop to login screen
+          if (_showEmoji) {
+            setState(() {
+              _showEmoji =
+                  !_showEmoji; //after pressing the button it will stop searching hence _isSearching=false
+            });
+          } else {
+            Navigator.pop(
+              context,
+            ); //if search button is not touched then pop the screen
+          }
+        },
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            // We control the back button
+            backgroundColor: Colors.white38,
+            // This removes the black status bar
+            elevation: 1,
+            flexibleSpace: SafeArea(
+              // ← SafeArea ONLY here
+              child: _appBar(),
             ),
           ),
-          // Expanded(
-          //   child: StreamBuilder(
-          //     stream: null,
-          //     builder: (context, snapshot) {
-          //       switch (snapshot.connectionState) {
-          //         //connection loading
-          //         case ConnectionState.waiting:
-          //         case ConnectionState.none:
-          //           // return Center(child: CircularProgressIndicator());
-          //
-          //         //connection loaded
-          //         case ConnectionState.active:
-          //         case ConnectionState.done:
-          //           // final data = snapshot.data?.docs; // final data = snapshot.data?.docs[0].data();
-          //           // _dataList = data?.map((e) => ChatUser.fromJson(e.data())).toList() ?? []; //for loop inside the data mapping
-          //           final _chatList = [];
-          //           if (_chatList.isNotEmpty) {
-          //             return ListView.builder(
-          //               physics: BouncingScrollPhysics(),
-          //               padding: EdgeInsets.only(top: mq.height * 0.02),
-          //               itemCount: _chatList.length,
-          //               itemBuilder: (context, index) {
-          //                 return Text('message: ${_chatList[index]}');
-          //               },
-          //             );
-          //           } else {
-          //             return Center(
-          //               child: Text(
-          //                 'No Connection Found!!',
-          //                 style: TextStyle(
-          //                   fontSize: 18,
-          //                   fontWeight: FontWeight.w500,
-          //                 ),
-          //               ),
-          //             );
-          //           }
-          //       }
-          //     },
-          //   ),
-          // ),
-          _bottomChatInput(),
-        ],
+          backgroundColor: Color(0xFFECE5DD),
+
+          body: Column(
+            children: [
+              _chatInput(),
+              _bottomChatInput(),
+
+              // Use with EmojiPicker
+              if (_showEmoji)
+                SizedBox(
+                  height: mq.height * .35,
+                  child: EmojiPicker(
+                    textEditingController: _textEditingController,
+                    // pass here the same [TextEditingController] that is connected to your input field, usually a [TextFormField]
+                    config: Config(
+                      height: 256,
+                      emojiViewConfig: EmojiViewConfig(
+                        columns: 7,
+                        emojiSizeMax:
+                            28 *
+                            (foundation.defaultTargetPlatform ==
+                                    TargetPlatform.iOS
+                                ? 1.20
+                                : 1.0),
+                      ),
+                      bottomActionBarConfig: BottomActionBarConfig(
+                        enabled: false,
+                      ),
+                      categoryViewConfig: CategoryViewConfig(
+                        extraTab: CategoryExtraTab.BACKSPACE,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Expanded _chatInput() {
+    return Expanded(
+      child: StreamBuilder(
+        stream: Apis.getAllMessages(widget.chatUser),
+        builder: (context, snapshot) {
+          switch (snapshot.connectionState) {
+            //check connection state
+            case ConnectionState.waiting:
+            case ConnectionState.none:
+              return Center(child: CircularProgressIndicator());
+            case ConnectionState.active:
+            case ConnectionState.done:
+              final data = snapshot.data?.docs;
+              logger.i(
+                'message: ${jsonEncode(data?.map((e) => e.data()).toList())}',
+              );
+              //now create a model for messageModel to put it in the msg list
+              final _msgList =
+                  data
+                      ?.map((e) => ChatMessageModel.fromJson(e.data()))
+                      .toList() ??
+                  [];
+
+              if (_msgList.isNotEmpty) {
+                // build the list first
+                final listView = ListView.builder(
+                  controller: _scrollController,
+                  physics: BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(top: mq.height * 0.02),
+                  itemCount: _msgList.length,
+                  itemBuilder: (context, index) {
+                    return MessageCard(
+                      chatMessageModel: _msgList[index],
+                      chatUser: widget.chatUser,
+                    );
+                  },
+                );
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_scrollController.hasClients) {
+                    _scrollController.jumpTo(
+                      _scrollController.position.maxScrollExtent,
+                    );
+                  }
+                });
+                return listView;
+              } else {
+                return Center(
+                  child: Text(
+                    '👋 Wave to say Hi!!',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                  ),
+                );
+              }
+          }
+        },
       ),
     );
   }
@@ -157,12 +176,24 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      setState(() {
+                        FocusScope.of(context).unfocus();
+                        _showEmoji = !_showEmoji;
+                      });
+                    },
                     icon: Icon(Icons.emoji_emotions_outlined),
                   ), //emoji
                   Expanded(
                     child: TextField(
-                      controller: _messageController,
+                      onTap: () {
+                        if (_showEmoji) {
+                          setState(() {
+                            _showEmoji = !_showEmoji;
+                          });
+                        }
+                      },
+                      controller: _textEditingController,
                       keyboardType: TextInputType.multiline,
                       maxLines: null,
                       decoration: InputDecoration(
@@ -186,12 +217,12 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
             //send button
             onPressed: () {
-              if (_messageController.text.isNotEmpty) {
+              if (_textEditingController.text.isNotEmpty) {
                 Apis.sendMessage(
                   widget.chatUser, //ChatUser(friends id) parameter pass
-                  _messageController.text, //msg parameter pass
+                  _textEditingController.text, //msg parameter pass
                 );
-                _messageController.clear();
+                _textEditingController.clear();
               }
             },
             style: ElevatedButton.styleFrom(
@@ -237,7 +268,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               SizedBox(height: mq.height * 0.0001),
               Text(
-                widget.chatUser.lastActive,
+                TimeFormat().formatTime(widget.chatUser.lastActive),
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
               ),
             ],

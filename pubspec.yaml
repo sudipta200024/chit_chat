@@ -49,6 +49,7 @@ dependencies:
   cached_network_image: ^3.4.1
   image_picker: ^1.2.1
   cloudinary_public: ^0.23.1
+  emoji_picker_flutter: ^4.4.0
 
 
 dev_dependencies:
