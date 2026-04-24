@@ -11,8 +11,11 @@ class MessageCard extends StatefulWidget {
   final ChatMessageModel chatMessageModel;
   final ChatUser chatUser;
 
-
-  const MessageCard({super.key, required this.chatMessageModel, required this.chatUser});
+  const MessageCard({
+    super.key,
+    required this.chatMessageModel,
+    required this.chatUser,
+  });
 
   @override
   State<MessageCard> createState() => _MessageCardState();
@@ -21,12 +24,15 @@ class MessageCard extends StatefulWidget {
 class _MessageCardState extends State<MessageCard> {
   @override
   Widget build(BuildContext context) {
-    return Apis.currentUser.uid == widget.chatMessageModel.fromId //if message is from current id then show green and if not then its frnds msg(logic)
+    return Apis.currentUser.uid ==
+            widget
+                .chatMessageModel
+                .fromId //if message is from current id then show green and if not then its frnds msg(logic)
         ? _greenMessage()
         : _whiteMessage();
   }
-  //time formate
 
+  //time formate
 
   Widget _greenMessage() {
     // my msg
@@ -65,26 +71,64 @@ class _MessageCardState extends State<MessageCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    widget.chatMessageModel.msg,
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 15,
-                    ),
-                  ),
+                  widget.chatMessageModel.type == Type.image
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: GestureDetector(
+                            onTap: () => Navigator.push(   // ← tap to full screen
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => Scaffold(
+                                  backgroundColor: Colors.black,
+                                  appBar: AppBar(backgroundColor: Colors.black, iconTheme: IconThemeData(color: Colors.white)),
+                                  body: Center(
+                                    child: CachedNetworkImage(
+                                      imageUrl: widget.chatMessageModel.msg,
+                                      fit: BoxFit.contain,         // ← full image
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: CachedNetworkImage(
+                                imageUrl: widget.chatMessageModel.msg,
+                                width: mq.width * 0.35,            // ← reduced from 0.55 to 0.35
+                                height: mq.width * 0.35,           // ← fixed height too
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => SizedBox(
+                                  width: mq.width * 0.35,
+                                  height: mq.width * 0.35,
+                                  child: Center(child: CircularProgressIndicator()),
+                                ),
+                                errorWidget: (context, url, error) => Icon(Icons.image_not_supported, size: 40),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Text(
+                          widget.chatMessageModel.msg,
+                          style: TextStyle(color: Colors.black87, fontSize: 15),
+                        ),
                   SizedBox(height: 4),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        TimeFormat().formatTime(widget.chatMessageModel.sent),// message timestamp field
-                        style: TextStyle(
-                          color: Colors.black45,
-                          fontSize: 11,
-                        ),
+                        TimeFormat().formatTime(widget.chatMessageModel.sent),
+                        // message timestamp field
+                        style: TextStyle(color: Colors.black45, fontSize: 11),
                       ),
                       SizedBox(width: 4),
-                      widget.chatMessageModel.read.isNotEmpty ? Icon(Icons.done_all, size: 16, color: Color(0xFF53BDEB)):Icon(Icons.done_all, size: 16, color: Colors.grey), // blue ticks
+                      widget.chatMessageModel.read.isNotEmpty
+                          ? Icon(
+                              Icons.done_all,
+                              size: 16,
+                              color: Color(0xFF53BDEB),
+                            )
+                          : Icon(Icons.done_all, size: 16, color: Colors.grey),
+                      // blue ticks
                     ],
                   ),
                 ],
@@ -99,7 +143,7 @@ class _MessageCardState extends State<MessageCard> {
   Widget _whiteMessage() {
     // friend's msg
     //update read while enters
-    if(widget.chatMessageModel.read.isEmpty){
+    if (widget.chatMessageModel.read.isEmpty) {
       Apis.updateReadMessageStatus(widget.chatMessageModel);
     }
     return Row(
@@ -115,7 +159,7 @@ class _MessageCardState extends State<MessageCard> {
                 : null,
             child: widget.chatUser.image.isEmpty
                 ? Icon(Icons.person, size: 16, color: Colors.grey)
-                : null,//if no image then shows this icon
+                : null, //if no image then shows this icon
           ),
         ),
         Column(
@@ -150,20 +194,51 @@ class _MessageCardState extends State<MessageCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.chatMessageModel.msg,
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 15,
-                    ),
-                  ),
+                  widget.chatMessageModel.type == Type.image
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: GestureDetector(
+                            onTap: () => Navigator.push(   // ← tap to full screen
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => Scaffold(
+                                  backgroundColor: Colors.black,
+                                  appBar: AppBar(backgroundColor: Colors.black, iconTheme: IconThemeData(color: Colors.white)),
+                                  body: Center(
+                                    child: CachedNetworkImage(
+                                      imageUrl: widget.chatMessageModel.msg,
+                                      fit: BoxFit.contain,         // ← full image
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: CachedNetworkImage(
+                                imageUrl: widget.chatMessageModel.msg,
+                                width: mq.width * 0.35,            // ← reduced from 0.55 to 0.35
+                                height: mq.width * 0.35,           // ← fixed height too
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => SizedBox(
+                                  width: mq.width * 0.35,
+                                  height: mq.width * 0.35,
+                                  child: Center(child: CircularProgressIndicator()),
+                                ),
+                                errorWidget: (context, url, error) => Icon(Icons.image_not_supported, size: 40),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Text(
+                          widget.chatMessageModel.msg,
+                          style: TextStyle(color: Colors.black87, fontSize: 15),
+                        ),
                   SizedBox(height: 4),
                   Text(
-                    TimeFormat().formatTime(widget.chatMessageModel.sent), // Message timestamp field
-                    style: TextStyle(
-                      color: Colors.black45,
-                      fontSize: 11,
-                    ),
+                    TimeFormat().formatTime(widget.chatMessageModel.sent),
+                    // Message timestamp field
+                    style: TextStyle(color: Colors.black45, fontSize: 11),
                   ),
                 ],
               ),

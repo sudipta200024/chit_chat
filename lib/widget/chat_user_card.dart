@@ -1,4 +1,3 @@
-import 'dart:ffi';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chit_chat/api/apis.dart';
@@ -76,11 +75,10 @@ class _ChatUserCardState extends State<ChatUserCard> {
               ),
               subtitle: Text(
                 _chatMessageModel != null
-                    ? _chatMessageModel!.msg
-                    : //if lastMessageList empty then _chatMessageModel empty
-                      widget
-                          .chatUser
-                          .about, //if lastMsg is empty then show about
+                    ? _chatMessageModel!.type == Type.image
+                    ? '📷 Image'                // ← shows this for image type ✅
+                    : _chatMessageModel!.msg    // ← shows text as before ✅
+                    : widget.chatUser.about,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

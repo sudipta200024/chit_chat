@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chit_chat/helper/time_format.dart';
@@ -8,7 +10,9 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../api/apis.dart';
+import '../../helper/dialogs.dart';
 import '../../models/chat_message_model.dart';
 import '../../models/chat_user.dart';
 
@@ -22,10 +26,19 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+
+  String? _selectedImage; // holds picked image path
   final ScrollController _scrollController = ScrollController();
   List<ChatMessageModel> _msgList = [];
   final TextEditingController _textEditingController = TextEditingController();
   bool _showEmoji = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();        // ← dispose scroll controller
+    _textEditingController.dispose();   // ← dispose text controller
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,16 +47,13 @@ class _ChatScreenState extends State<ChatScreen> {
       child: PopScope(
         canPop: false, // denied auto back button
         onPopInvokedWithResult: (didPop, result) {
-          //as canPop=false then didPop=false cause screen wont pop to login screen
+          if (didPop) return;              // ← add this line only
           if (_showEmoji) {
             setState(() {
-              _showEmoji =
-                  !_showEmoji; //after pressing the button it will stop searching hence _isSearching=false
+              _showEmoji = !_showEmoji;
             });
           } else {
-            Navigator.pop(
-              context,
-            ); //if search button is not touched then pop the screen
+            Navigator.pop(context);
           }
         },
         child: Scaffold(
@@ -138,7 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                 );
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_scrollController.hasClients) {
+                  if (_scrollController.hasClients && mounted) {  // ← add mounted check
                     _scrollController.jumpTo(
                       _scrollController.position.maxScrollExtent,
                     );
@@ -161,9 +171,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _bottomChatInput() {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: mq.width * 0.02,
-        vertical: mq.height * 0.02,
+      padding: EdgeInsets.only(
+        left: mq.width * 0.02,
+        right: mq.width * 0.02,
+        top: mq.height * 0.01,
+        bottom: mq.height * 0.01 + MediaQuery.of(context).padding.bottom, // ← adds safe area padding
       ),
       child: Row(
         children: [
@@ -185,29 +197,82 @@ class _ChatScreenState extends State<ChatScreen> {
                     icon: Icon(Icons.emoji_emotions_outlined),
                   ), //emoji
                   Expanded(
-                    child: TextField(
-                      onTap: () {
-                        if (_showEmoji) {
-                          setState(() {
-                            _showEmoji = !_showEmoji;
-                          });
-                        }
-                      },
-                      controller: _textEditingController,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        hintText: 'Type a message',
-                        border: InputBorder.none,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_selectedImage != null)
+                          Stack(
+                            children: [
+                              Container(
+                                margin: EdgeInsets.all(8),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    File(_selectedImage!),
+                                    height: 80,
+                                    width: 80,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _selectedImage = null),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.close, size: 16, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        TextField(                        // ← exact same TextField as before
+                          onTap: () {
+                            if (_showEmoji) {
+                              setState(() => _showEmoji = !_showEmoji);
+                            }
+                          },
+                          controller: _textEditingController,
+                          keyboardType: TextInputType.multiline,
+                          maxLines: null,
+                          decoration: InputDecoration(
+                            hintText: 'Type a message',
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(
+                        source: ImageSource.gallery,
+                        imageQuality: 70,
+                      );
+                      if (image != null) {
+                        setState(() => _selectedImage = image.path); // ← just store
+                      }
+                    },
                     icon: Icon(Icons.image_outlined),
                   ), //gallery
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(
+                        source: ImageSource.camera,
+                        imageQuality: 70,
+                      );
+                      if (image != null) {
+                        setState(() => _selectedImage = image.path); // ← just store
+                      }
+                    },
                     icon: Icon(Icons.camera_alt_outlined),
                   ), //camera
                 ],
@@ -216,12 +281,16 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           IconButton(
             //send button
-            onPressed: () {
-              if (_textEditingController.text.isNotEmpty) {
-                Apis.sendMessage(
-                  widget.chatUser, //ChatUser(friends id) parameter pass
-                  _textEditingController.text, //msg parameter pass
-                );
+            onPressed: () async {
+              if (_selectedImage != null) {
+                // send image
+                Dialogs.showProgressBar(context);
+                await Apis.sendChatImage(widget.chatUser, _selectedImage!);
+                Navigator.pop(context);
+                setState(() => _selectedImage = null); // ← clear after send
+              } else if (_textEditingController.text.isNotEmpty) {
+                // send text (same as before)
+                Apis.sendMessage(widget.chatUser, _textEditingController.text);
                 _textEditingController.clear();
               }
             },
@@ -277,4 +346,5 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+
 }

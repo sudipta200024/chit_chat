@@ -186,6 +186,47 @@ class Apis {
         .limit(1)//only get the latest message for less load time
         .snapshots();
   }
+
+
+  //send chat images
+
+  static Future<String?> sendChatImage(ChatUser chatUser, String imagePath) async {//just like sendMsg + upload picture together
+    try {
+      CloudinaryResponse response = await cloudinary.uploadFile(
+        //this is going to cloudinary
+        CloudinaryFile.fromFile(
+          imagePath, //imagePath = _image(from Xfile gallery or camera)step 1
+          resourceType: CloudinaryResourceType.Image,
+          folder: 'chat_images',
+        ),
+      );
+      String imageUrl = response.secureUrl; //this is coming from cloudinary
+      final time = DateTime.now().millisecondsSinceEpoch.toString();
+
+      final ChatMessageModel chatMessageModel = ChatMessageModel(
+        msg: imageUrl,
+        //text editing controllers message
+        toId: chatUser.id,
+        //passing parameter of chatUser id cause current id wants to sent to chatUser
+        read: '',
+        type: Type.image,
+        sent: time,
+        fromId: currentUser.uid,
+      );
+      //update image url inside firestore(step 2)
+      await firestore
+          .collection(
+        'chats/${getConversationID(chatUser.id)}/messages',
+      ) //senders ID
+          .doc(time)
+          .set(chatMessageModel.toJson());
+      logger.i('message sent$imageUrl');
+      return imageUrl;
+    } catch (e) {
+      logger.e('Cloudinary error: $e');
+    }
+    return null;
+  }
 }
 
 //firebase doc
