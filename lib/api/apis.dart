@@ -201,10 +201,10 @@ class Apis {
         ),
       );
       String imageUrl = response.secureUrl; //this is coming from cloudinary
-      final time = DateTime.now().millisecondsSinceEpoch.toString();
+      final time = DateTime.now().millisecondsSinceEpoch.toString();//for creating msg id
 
       final ChatMessageModel chatMessageModel = ChatMessageModel(
-        msg: imageUrl,
+        msg: imageUrl,//cloudinary uploaded picture url goes to chatMsgModel
         //text editing controllers message
         toId: chatUser.id,
         //passing parameter of chatUser id cause current id wants to sent to chatUser

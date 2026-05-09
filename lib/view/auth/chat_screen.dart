@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -26,18 +25,31 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-
-  String? _selectedImage; // holds picked image path
+  List<String> _selectedImages = []; // holds picked image path
   final ScrollController _scrollController = ScrollController();
-  List<ChatMessageModel> _msgList = [];
+  final List<ChatMessageModel> _msgList = [];
   final TextEditingController _textEditingController = TextEditingController();
   bool _showEmoji = false;
+  bool _isUploading = false;
+  bool _initialScrollDone = false;
 
   @override
   void dispose() {
-    _scrollController.dispose();        // ← dispose scroll controller
-    _textEditingController.dispose();   // ← dispose text controller
+    _scrollController.dispose(); // ← dispose scroll controller
+    _textEditingController.dispose(); // ← dispose text controller
     super.dispose();
+  }
+  void _scrollToBottom() {
+    Future.delayed(Duration(milliseconds: 300), () {
+      // ← wait for list to update
+      if (_scrollController.hasClients && mounted) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -47,7 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: PopScope(
         canPop: false, // denied auto back button
         onPopInvokedWithResult: (didPop, result) {
-          if (didPop) return;              // ← add this line only
+          if (didPop) return;
           if (_showEmoji) {
             setState(() {
               _showEmoji = !_showEmoji;
@@ -76,7 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
               _chatInput(),
               _bottomChatInput(),
 
-              // Use with EmojiPicker
+              // Use with EmojiPicker if emoji press _showEmoji = true
               if (_showEmoji)
                 SizedBox(
                   height: mq.height * .35,
@@ -110,32 +122,25 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+
   Expanded _chatInput() {
     return Expanded(
       child: StreamBuilder(
         stream: Apis.getAllMessages(widget.chatUser),
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
-            //check connection state
             case ConnectionState.waiting:
             case ConnectionState.none:
               return Center(child: CircularProgressIndicator());
             case ConnectionState.active:
             case ConnectionState.done:
               final data = snapshot.data?.docs;
-              logger.i(
-                'message: ${jsonEncode(data?.map((e) => e.data()).toList())}',
-              );
-              //now create a model for messageModel to put it in the msg list
               final _msgList =
-                  data
-                      ?.map((e) => ChatMessageModel.fromJson(e.data()))
-                      .toList() ??
-                  [];
+                  data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
 
               if (_msgList.isNotEmpty) {
-                // build the list first
-                final listView = ListView.builder(
+                return ListView.builder(
+                  reverse: true,
                   controller: _scrollController,
                   physics: BouncingScrollPhysics(),
                   padding: EdgeInsets.only(top: mq.height * 0.02),
@@ -147,14 +152,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   },
                 );
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_scrollController.hasClients && mounted) {  // ← add mounted check
-                    _scrollController.jumpTo(
-                      _scrollController.position.maxScrollExtent,
-                    );
-                  }
-                });
-                return listView;
               } else {
                 return Center(
                   child: Text(
@@ -168,14 +165,15 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-
   Widget _bottomChatInput() {
     return Padding(
       padding: EdgeInsets.only(
         left: mq.width * 0.02,
         right: mq.width * 0.02,
         top: mq.height * 0.01,
-        bottom: mq.height * 0.01 + MediaQuery.of(context).padding.bottom, // ← adds safe area padding
+        bottom:
+            mq.height * 0.01 +
+            MediaQuery.of(context).padding.bottom, // ← adds safe area padding
       ),
       child: Row(
         children: [
@@ -201,38 +199,53 @@ class _ChatScreenState extends State<ChatScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (_selectedImage != null)
-                          Stack(
-                            children: [
-                              Container(
-                                margin: EdgeInsets.all(8),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(
-                                    File(_selectedImage!),
-                                    height: 80,
-                                    width: 80,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                child: GestureDetector(
-                                  onTap: () => setState(() => _selectedImage = null),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
+                        if (_selectedImages.isNotEmpty)
+                          SizedBox(
+                            height: 100,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _selectedImages.length,
+                              itemBuilder: (context, index) {
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      margin: EdgeInsets.all(8),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.file(
+                                          File(_selectedImages[index]),
+                                          height: 80,
+                                          width: 80,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
                                     ),
-                                    child: Icon(Icons.close, size: 16, color: Colors.white),
-                                  ),
-                                ),
-                              ),
-                            ],
+                                    Positioned(
+                                      top: 0,
+                                      left: 0,
+                                      child: GestureDetector(
+                                        onTap: () => setState(
+                                          () => _selectedImages.removeAt(index),
+                                        ),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.close,
+                                            size: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
-                        TextField(                        // ← exact same TextField as before
+                        TextField(
                           onTap: () {
                             if (_showEmoji) {
                               setState(() => _showEmoji = !_showEmoji);
@@ -252,12 +265,17 @@ class _ChatScreenState extends State<ChatScreen> {
                   IconButton(
                     onPressed: () async {
                       final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(
-                        source: ImageSource.gallery,
+                      final List<XFile> images = await picker.pickMultiImage(
                         imageQuality: 70,
                       );
-                      if (image != null) {
-                        setState(() => _selectedImage = image.path); // ← just store
+                      if (images.isNotEmpty) {
+                        setState(
+                          () => _selectedImages.addAll(
+                            images
+                                .map((e) => e.path)
+                                .toList(), // ← adds to existing list
+                          ),
+                        );
                       }
                     },
                     icon: Icon(Icons.image_outlined),
@@ -270,7 +288,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         imageQuality: 70,
                       );
                       if (image != null) {
-                        setState(() => _selectedImage = image.path); // ← just store
+                        setState(
+                          () => _selectedImages.add(image.path),
+                        ); // ← just store
                       }
                     },
                     icon: Icon(Icons.camera_alt_outlined),
@@ -279,27 +299,47 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          IconButton(
-            //send button
-            onPressed: () async {
-              if (_selectedImage != null) {
-                // send image
-                Dialogs.showProgressBar(context);
-                await Apis.sendChatImage(widget.chatUser, _selectedImage!);
-                Navigator.pop(context);
-                setState(() => _selectedImage = null); // ← clear after send
-              } else if (_textEditingController.text.isNotEmpty) {
-                // send text (same as before)
-                Apis.sendMessage(widget.chatUser, _textEditingController.text);
-                _textEditingController.clear();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.greenAccent,
-              shape: CircleBorder(),
-            ),
-            icon: Icon(Icons.send_outlined),
-          ),
+          // Replace the send IconButton with this
+          _isUploading
+              ? Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.green,
+                    ),
+                  ),
+                )
+              : IconButton(
+                  onPressed: () async {
+                    if (_selectedImages.isNotEmpty) {
+                      setState(
+                        () => _isUploading = true,
+                      ); // show circle spinner in button
+                      for (String imagePath in _selectedImages) {
+                        await Apis.sendChatImage(widget.chatUser, imagePath);
+                      }
+                      setState(() {
+                        _isUploading = false; //  hide spinner
+                        _selectedImages = []; //  clear images
+                      });
+                      _scrollToBottom();
+                    } else if (_textEditingController.text.isNotEmpty) {
+                      Apis.sendMessage(
+                        widget.chatUser,
+                        _textEditingController.text,
+                      );
+                      _textEditingController.clear();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.greenAccent,
+                    shape: CircleBorder(),
+                  ),
+                  icon: Icon(Icons.send_outlined),
+                ),
         ],
       ),
     );
@@ -346,5 +386,4 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-
 }

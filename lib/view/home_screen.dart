@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ? _searchList[index]
                               : _dataList[index],
                         ); //clicked on the user name will select the indexed id and pass it to chatUserCard
-                        // return Text('name: ${list[index]}');
+                        // return Text('name: ${list[index]}');  //ChatUser is created here
                       },
                     );
                   } else {
