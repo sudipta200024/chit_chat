@@ -39,6 +39,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _textEditingController.dispose(); // ← dispose text controller
     super.dispose();
   }
+
   void _scrollToBottom() {
     Future.delayed(Duration(milliseconds: 300), () {
       // ← wait for list to update
@@ -122,7 +123,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-
   Expanded _chatInput() {
     return Expanded(
       child: StreamBuilder(
@@ -136,7 +136,10 @@ class _ChatScreenState extends State<ChatScreen> {
             case ConnectionState.done:
               final data = snapshot.data?.docs;
               final _msgList =
-                  data?.map((e) => ChatMessageModel.fromJson(e.data())).toList() ?? [];
+                  data
+                      ?.map((e) => ChatMessageModel.fromJson(e.data()))
+                      .toList() ??
+                  [];
 
               if (_msgList.isNotEmpty) {
                 return ListView.builder(
@@ -165,6 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+
   Widget _bottomChatInput() {
     return Padding(
       padding: EdgeInsets.only(
@@ -349,40 +353,59 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       height: kToolbarHeight,
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back),
-          ),
-          SizedBox(width: mq.width * 0.001),
-          CircleAvatar(
-            radius: mq.width * 0.05,
-            backgroundColor: Colors.grey.shade200,
-            backgroundImage: widget.chatUser.image.isNotEmpty
-                ? CachedNetworkImageProvider(widget.chatUser.image)
-                : null,
-            child: widget.chatUser.image.isEmpty
-                ? const Icon(CupertinoIcons.person, size: 22)
-                : null,
-          ),
-          SizedBox(width: mq.width * 0.02),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: StreamBuilder(
+        stream: Apis.getUserInfo(widget.chatUser),
+        builder: (context, snapshot) {
+          final data = snapshot.data?.docs;
+          final list =
+              data?.map((e) => ChatUser.fromJson(e.data())).toList() ??
+              []; //converted from json to dart to handle null safety
+          return Row(
             children: [
-              Text(
-                widget.chatUser.name,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
               ),
-              SizedBox(height: mq.height * 0.0001),
-              Text(
-                TimeFormat().formatTime(widget.chatUser.lastActive),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+              SizedBox(width: mq.width * 0.001),
+              CircleAvatar(
+                radius: mq.width * 0.05,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage:
+                    (list.isNotEmpty ? list[0].image : widget.chatUser.image)
+                        .isNotEmpty
+                    ? CachedNetworkImageProvider(
+                        list.isNotEmpty ? list[0].image : widget.chatUser.image,
+                      )
+                    : null,
+                child:
+                    (list.isNotEmpty ? list[0].image : widget.chatUser.image)
+                        .isEmpty
+                    ? const Icon(CupertinoIcons.person, size: 22)
+                    : null,
+              ),
+              SizedBox(width: mq.width * 0.02),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    list.isNotEmpty ? list[0].name : widget.chatUser.name,
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
+                  SizedBox(height: mq.height * 0.0001),
+                  Text(
+                    list.isNotEmpty
+                        ? list[0].isOnline
+                              ? 'Online'
+                              : TimeFormat().formatTime(list[0].lastActive)
+                        : TimeFormat().formatTime(widget.chatUser.lastActive),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

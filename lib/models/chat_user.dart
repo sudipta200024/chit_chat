@@ -14,7 +14,7 @@ class ChatUser {
   late  String name;
   late  String about;
   late final String createdAt;
-  late final String id;
+  late  String id;
   late final String lastActive;
   late final bool isOnline;
   late final String pushToken;

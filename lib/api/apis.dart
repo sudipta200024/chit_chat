@@ -77,6 +77,22 @@ class Apis {
     });
   }
 
+//to get info about users online offline data and active time
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(ChatUser chatUser ) {
+    return firestore
+        .collection('users')
+        .where('id', isEqualTo: chatUser.id)
+        .snapshots();
+  }
+
+  //update online offline and time activity status
+  static Future<void> updateActiveStatus(bool isOnline) async {
+    return await firestore.collection('users').doc(currentUser.uid).update({
+      'is_online': isOnline,
+      'last_active':DateTime.now().millisecondsSinceEpoch.toString(),
+    });
+  }
+
   //update profile picture using cloudinary
   static Future<String?> updateProfilePicture(String imagePath) async {
     try {
