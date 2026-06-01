@@ -397,8 +397,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     list.isNotEmpty
                         ? list[0].isOnline
                               ? 'Online'
-                              : TimeFormat().formatTime(list[0].lastActive)
-                        : TimeFormat().formatTime(widget.chatUser.lastActive),
+                              : TimeFormat.getLastActiveTime(context: context, lastActive: list[0].lastActive)
+                        : TimeFormat.getLastActiveTime(context: context, lastActive: widget.chatUser.lastActive),//from_time format
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
                   ),
                 ],

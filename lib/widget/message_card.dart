@@ -116,7 +116,7 @@ class _MessageCardState extends State<MessageCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        TimeFormat().formatTime(widget.chatMessageModel.sent),
+                        TimeFormat.getLastMessageTime(context:context,time:widget.chatMessageModel.sent),
                         // message timestamp field
                         style: TextStyle(color: Colors.black45, fontSize: 11),
                       ),
@@ -236,7 +236,7 @@ class _MessageCardState extends State<MessageCard> {
                         ),
                   SizedBox(height: 4),
                   Text(
-                    TimeFormat().formatTime(widget.chatMessageModel.sent),
+                    TimeFormat.getLastMessageTime(context: context, time: widget.chatMessageModel.sent),
                     // Message timestamp field
                     style: TextStyle(color: Colors.black45, fontSize: 11),
                   ),

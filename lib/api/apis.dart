@@ -145,7 +145,7 @@ class Apis {
     //passing the parameter of chatUser id cause current id wants to sent to chatUser
     //gets the id that will be passed from messageCard
     return firestore
-        .collection('chats/${getConversationID(chatUser.id)}/messages')
+        .collection('chats/${getConversationID(chatUser.id)}/messages').orderBy('sent', descending: true)
         .snapshots();
   }
 

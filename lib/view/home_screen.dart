@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:chit_chat/view/auth/login_screen.dart';
 import 'package:chit_chat/main.dart';
 import 'package:chit_chat/view/profile_screen.dart';
@@ -5,6 +7,7 @@ import 'package:chit_chat/widget/chat_user_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../api/apis.dart';
 import '../helper/dialogs.dart';
@@ -26,6 +29,20 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     Apis.getSelfInfo();
+    //by default set active when in app
+    Apis.updateActiveStatus(true);
+    //for updating active status
+    SystemChannels.lifecycle.setMessageHandler((message){
+      logger.e('Message: $message');
+      
+      if(message.toString().contains('resume')){
+        Apis.updateActiveStatus(true);//set active
+      }else{
+        Apis.updateActiveStatus(false);//set deactivate
+      }
+      
+      return Future.value(message);
+    });
   }
 
   @override
