@@ -1,16 +1,11 @@
-import 'dart:math';
 
-import 'package:chit_chat/view/auth/login_screen.dart';
 import 'package:chit_chat/main.dart';
 import 'package:chit_chat/view/profile_screen.dart';
 import 'package:chit_chat/widget/chat_user_card.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../api/apis.dart';
-import '../helper/dialogs.dart';
 import '../models/chat_user.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -34,13 +29,15 @@ class _HomeScreenState extends State<HomeScreen> {
     //for updating active status
     SystemChannels.lifecycle.setMessageHandler((message){
       logger.e('Message: $message');
-      
-      if(message.toString().contains('resume')){
-        Apis.updateActiveStatus(true);//set active
-      }else{
-        Apis.updateActiveStatus(false);//set deactivate
+
+      if(Apis.auth.currentUser != null){
+
+        if(message.toString().contains('resume')){//works only when logged in : it will still work when logged out and show active
+          Apis.updateActiveStatus(true);//set active
+        }else{
+          Apis.updateActiveStatus(false);//set deactivate
+        }
       }
-      
       return Future.value(message);
     });
   }
@@ -118,14 +115,15 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.only(bottom: 90, right: 5),
             child: FloatingActionButton(
               onPressed: () async {
-                Dialogs.showProgressBar(context);
-                await FirebaseAuth.instance.signOut();
-                await GoogleSignIn().signOut();
-                Navigator.pop(context);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginScreen()),
-                );
+                // Dialogs.showProgressBar(context);
+                // await Apis.updateActiveStatus(false);
+                // await FirebaseAuth.instance.signOut();
+                // await GoogleSignIn().signOut();
+                // Navigator.pop(context);
+                // Navigator.pushReplacement(
+                //   context,
+                //   MaterialPageRoute(builder: (_) => LoginScreen()),
+                // );
               },
               child: Icon(Icons.add_circle_outline_rounded),
             ),

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chit_chat/helper/time_format.dart';
 import 'package:chit_chat/main.dart';
+import 'package:chit_chat/view/user_profile_screen.dart';
 import 'package:chit_chat/widget/message_card.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
@@ -350,62 +351,67 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _appBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      height: kToolbarHeight,
-      child: StreamBuilder(
-        stream: Apis.getUserInfo(widget.chatUser),
-        builder: (context, snapshot) {
-          final data = snapshot.data?.docs;
-          final list =
-              data?.map((e) => ChatUser.fromJson(e.data())).toList() ??
-              []; //converted from json to dart to handle null safety
-          return Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back),
-              ),
-              SizedBox(width: mq.width * 0.001),
-              CircleAvatar(
-                radius: mq.width * 0.05,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage:
-                    (list.isNotEmpty ? list[0].image : widget.chatUser.image)
-                        .isNotEmpty
-                    ? CachedNetworkImageProvider(
-                        list.isNotEmpty ? list[0].image : widget.chatUser.image,
-                      )
-                    : null,
-                child:
-                    (list.isNotEmpty ? list[0].image : widget.chatUser.image)
-                        .isEmpty
-                    ? const Icon(CupertinoIcons.person, size: 22)
-                    : null,
-              ),
-              SizedBox(width: mq.width * 0.02),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    list.isNotEmpty ? list[0].name : widget.chatUser.name,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-                  SizedBox(height: mq.height * 0.0001),
-                  Text(
-                    list.isNotEmpty
-                        ? list[0].isOnline
-                              ? 'Online'
-                              : TimeFormat.getLastActiveTime(context: context, lastActive: list[0].lastActive)
-                        : TimeFormat.getLastActiveTime(context: context, lastActive: widget.chatUser.lastActive),//from_time format
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
+    return InkWell(
+      onTap: (){
+        Navigator.push(context, MaterialPageRoute(builder: (_)=>UserProfileScreen(user: widget.chatUser)));
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        height: kToolbarHeight,
+        child: StreamBuilder(
+          stream: Apis.getUserInfo(widget.chatUser),
+          builder: (context, snapshot) {
+            final data = snapshot.data?.docs;
+            final list =
+                data?.map((e) => ChatUser.fromJson(e.data())).toList() ??
+                []; //converted from json to dart to handle null safety
+            return Row(
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                SizedBox(width: mq.width * 0.001),
+                CircleAvatar(
+                  radius: mq.width * 0.05,
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage:
+                      (list.isNotEmpty ? list[0].image : widget.chatUser.image)
+                          .isNotEmpty
+                      ? CachedNetworkImageProvider(
+                          list.isNotEmpty ? list[0].image : widget.chatUser.image,
+                        )
+                      : null,
+                  child:
+                      (list.isNotEmpty ? list[0].image : widget.chatUser.image)
+                          .isEmpty
+                      ? const Icon(CupertinoIcons.person, size: 22)
+                      : null,
+                ),
+                SizedBox(width: mq.width * 0.02),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      list.isNotEmpty ? list[0].name : widget.chatUser.name,
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    ),
+                    SizedBox(height: mq.height * 0.0001),
+                    Text(
+                      list.isNotEmpty
+                          ? list[0].isOnline
+                                ? 'Online'
+                                : TimeFormat.getLastActiveTime(context: context, lastActive: list[0].lastActive)
+                          : TimeFormat.getLastActiveTime(context: context, lastActive: widget.chatUser.lastActive),//from_time format
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chit_chat/models/chat_user.dart';
 import 'package:chit_chat/view/auth/login_screen.dart';
 import 'package:chit_chat/main.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -34,9 +36,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             IconButton(
               onPressed: () async {
                 Dialogs.showProgressBar(context);
-                await Apis.auth.signOut();
+                await Apis.updateActiveStatus(false);//update inactive
+                await Apis.auth.signOut();//signout from firebase
                 await GoogleSignIn().signOut();
                 Navigator.pop(context); // dismiss progress bar
+                // Apis.auth = FirebaseAuth.instance; //if Apis.auth= null uncomment
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (_) => LoginScreen()),
@@ -44,7 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   //deletes login home and profile route
                 );
               },
-              icon: Icon(Icons.logout),
+              icon: Icon(Icons.logout,color: Colors.deepOrangeAccent),
             ),
           ],
         ),
