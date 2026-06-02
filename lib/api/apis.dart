@@ -77,8 +77,10 @@ class Apis {
     });
   }
 
-//to get info about users online offline data and active time
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(ChatUser chatUser ) {
+  //to get info about users online offline data and active time
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(
+    ChatUser chatUser,
+  ) {
     return firestore
         .collection('users')
         .where('id', isEqualTo: chatUser.id)
@@ -89,7 +91,7 @@ class Apis {
   static Future<void> updateActiveStatus(bool isOnline) async {
     return await firestore.collection('users').doc(currentUser.uid).update({
       'is_online': isOnline,
-      'last_active':DateTime.now().millisecondsSinceEpoch.toString(),
+      'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
     });
   }
 
@@ -138,14 +140,19 @@ class Apis {
     }
   }
 
-  //get all messages
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllImageMessages(
     ChatUser chatUser,
   ) {
-    //passing the parameter of chatUser id cause current id wants to sent to chatUser
-    //gets the id that will be passed from messageCard
     return firestore
-        .collection('chats/${getConversationID(chatUser.id)}/messages').orderBy('sent', descending: true)
+        .collection('chats/${getConversationID(chatUser.id)}/messages')
+        .snapshots();
+  }
+
+  //get all messages
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser chatUser,) {
+    return firestore
+        .collection('chats/${getConversationID(chatUser.id)}/messages')
+        .orderBy('sent', descending: true)
         .snapshots();
   }
 
@@ -194,19 +201,28 @@ class Apis {
         }); //update read = current time
   }
 
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getLastMessage(ChatUser chatUser,) {
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getLastMessage(
+    ChatUser chatUser,
+  ) {
     //passing the parameter of chatUser id cause current id wants to sent to chatUser
     //gets the id that will be passed from messageCard
     return firestore
-        .collection('chats/${getConversationID(chatUser.id)}/messages').orderBy('sent',descending: true)//descending order to get the latest message
-        .limit(1)//only get the latest message for less load time
+        .collection('chats/${getConversationID(chatUser.id)}/messages')
+        .orderBy(
+          'sent',
+          descending: true,
+        ) //descending order to get the latest message
+        .limit(1) //only get the latest message for less load time
         .snapshots();
   }
 
-
   //send chat images
 
-  static Future<String?> sendChatImage(ChatUser chatUser, String imagePath) async {//just like sendMsg + upload picture together
+  static Future<String?> sendChatImage(
+    ChatUser chatUser,
+    String imagePath,
+  ) async {
+    //just like sendMsg + upload picture together
     try {
       CloudinaryResponse response = await cloudinary.uploadFile(
         //this is going to cloudinary
@@ -217,10 +233,12 @@ class Apis {
         ),
       );
       String imageUrl = response.secureUrl; //this is coming from cloudinary
-      final time = DateTime.now().millisecondsSinceEpoch.toString();//for creating msg id
+      final time = DateTime.now().millisecondsSinceEpoch
+          .toString(); //for creating msg id
 
       final ChatMessageModel chatMessageModel = ChatMessageModel(
-        msg: imageUrl,//cloudinary uploaded picture url goes to chatMsgModel
+        msg: imageUrl,
+        //cloudinary uploaded picture url goes to chatMsgModel
         //text editing controllers message
         toId: chatUser.id,
         //passing parameter of chatUser id cause current id wants to sent to chatUser
@@ -232,8 +250,8 @@ class Apis {
       //update image url inside firestore(step 2)
       await firestore
           .collection(
-        'chats/${getConversationID(chatUser.id)}/messages',
-      ) //senders ID
+            'chats/${getConversationID(chatUser.id)}/messages',
+          ) //senders ID
           .doc(time)
           .set(chatMessageModel.toJson());
       logger.i('message sent$imageUrl');

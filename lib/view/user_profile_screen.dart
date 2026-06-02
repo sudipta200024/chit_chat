@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chit_chat/helper/time_format.dart';
 import 'package:chit_chat/models/chat_user.dart';
 import 'package:chit_chat/view/auth/login_screen.dart';
 import 'package:chit_chat/main.dart';
@@ -12,9 +13,11 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import '../api/apis.dart';
 import '../helper/dialogs.dart';
+import '../models/chat_message_model.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final ChatUser user;
+
   const UserProfileScreen({super.key, required this.user});
 
   @override
@@ -22,7 +25,6 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-
   String? _image;
 
   @override
@@ -32,100 +34,135 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.user.name),
-          actions: [
-            IconButton(
-              onPressed: () async {
-                Dialogs.showProgressBar(context);
-                await Apis.updateActiveStatus(false);//update inactive
-                await Apis.auth.signOut();//signout from firebase
-                await GoogleSignIn().signOut();
-                Navigator.pop(context); // dismiss progress bar
-                // Apis.auth = FirebaseAuth.instance; //if Apis.auth= null uncomment
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginScreen()),
-                  (route) => false, //removes all the routes from the stack
-                  //deletes login home and profile route
-                );
-              },
-              icon: Icon(Icons.logout,color: Colors.deepOrangeAccent),
-            ),
-          ],
+          
         ),
 
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: mq.width * .05),
-            child: Column(
-              children: [
-                SizedBox(height: mq.height * 0.02),
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: mq.width * .05),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: mq.height * 0.02, width: mq.width),
+              _image != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(mq.width * .2),
+                      child: Image.file(
+                        File(_image!),
+                        width: mq.width * .4,
+                        height: mq.width * .4,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(mq.width * .2),
+                      // ← half of .5 below
+                      child: CachedNetworkImage(
+                        width: mq.width * .4,
+                        height: mq.width * .4,
+                        fit: BoxFit.cover,
+                        imageUrl: widget.user.image,
+                        placeholder: (context, url) =>
+                            CircularProgressIndicator(),
+                        errorWidget: (context, url, error) =>
+                            Icon(CupertinoIcons.person),
+                      ),
+                    ),
 
-                _image != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              mq.width * .2,
-                            ),
-                            // ← half of .5 below
-                            child: Image.file(
-                              File(_image!),
-                              width: mq.width * .4,
-                              height: mq.width * .4,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              mq.width * .2,
-                            ),
-                            // ← half of .5 below
+              SizedBox(height: mq.height * 0.03),
+
+              Text(
+                widget.user.email,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+              ),
+
+              SizedBox(height: mq.height * 0.02),
+
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'About: ',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    TextSpan(
+                      text: widget.user.about,
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: mq.height * 0.04),
+              StreamBuilder(
+                stream: Apis.getAllImageMessages(widget.user),
+                builder: (context, snapshot) {
+                  final data = snapshot.data?.docs;
+                  final images = data?.map((e) => ChatMessageModel.fromJson(e.data())).where((e) => e.msg.startsWith('http'))
+                      .toList() ?? [];
+
+                  if (images.isEmpty) return SizedBox();
+
+                  return SizedBox(
+                    height: mq.height * 0.2,
+                    child: PageView.builder(
+                      controller: PageController(viewportFraction: 0.85),
+                      itemCount: images.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
                             child: CachedNetworkImage(
-                              width: mq.width * .4,
-                              height: mq.width * .4,
+                              imageUrl: images[index].msg,
                               fit: BoxFit.cover,
-                              imageUrl: widget.user.image,
                               placeholder: (context, url) =>
-                                  CircularProgressIndicator(),
+                                  Center(child: CircularProgressIndicator()),
                               errorWidget: (context, url, error) =>
-                                  Icon(CupertinoIcons.person),
+                                  Icon(Icons.image_not_supported),
                             ),
                           ),
-
-
-                SizedBox(height: mq.height * 0.02),
-
-                Text(
-                  widget.user.email,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400),
-                ),
-
-                SizedBox(height: mq.height * 0.04),
-
-                SizedBox(height: mq.height * 0.04),
-                SizedBox(height: mq.height * 0.09),
-                ElevatedButton.icon(
-                  onPressed: () {
-
-                  },
-                  style: ElevatedButton.styleFrom(
-                    elevation: 6,
-                    backgroundColor: Colors.blue,
-                    shape: StadiumBorder(),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: mq.width * .3,
-                      vertical: mq.height * .01,
+                        );
+                      },
                     ),
-                  ),
-                  icon: Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: Icon(Icons.edit, color: Colors.white, size: 20),
-                  ),
-                  label: Text(
-                    'Update',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
-                  ),
+                  );
+                },
+              ),
+              SizedBox(height: mq.height * 0.2),
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Joined: ',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    TextSpan(
+                      text: TimeFormat.getJoinedTime(
+                        time: widget.user.createdAt,
+                      ),
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              SizedBox(height: mq.height * 0.09),
+            ],
           ),
         ),
       ),
@@ -170,7 +207,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   onPressed: () async {
                     final ImagePicker picker = ImagePicker();
                     final XFile? image = await picker.pickImage(
-                      source: ImageSource.gallery,imageQuality: 80
+                      source: ImageSource.gallery,
+                      imageQuality: 80,
                     );
                     if (image != null) {
                       logger.i(
@@ -199,7 +237,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   onPressed: () async {
                     final ImagePicker picker = ImagePicker();
                     final XFile? image = await picker.pickImage(
-                      source: ImageSource.camera,imageQuality: 80
+                      source: ImageSource.camera,
+                      imageQuality: 80,
                     );
                     if (image != null) {
                       logger.i(

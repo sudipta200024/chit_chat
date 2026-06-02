@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 class TimeFormat {
+  //default time format function
+  static String getJoinedTime({required String time}) {
+    final DateTime dt = DateTime.fromMicrosecondsSinceEpoch(int.parse(time));
+    return '${dt.day} ${_getMonth(dt)} ${dt.year}'; // always shows full date with year
+  }
   //time formate
   static String getLastMessageTime(
       {required BuildContext context, required String time, bool showYear = false}) {
