@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import "package:firebase_core/firebase_core.dart";
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'api/api_keys.dart';
 import 'firebase_options.dart';
 
 late Size mq; //media query Size declaration globally
@@ -13,8 +15,17 @@ Logger logger = Logger(
     colors: true,         // ← keeps colors
   ),
 );
-void main() {
+void main() async{
+
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // OneSignal init
+  OneSignal.initialize(ApiKeys.oneSignalAppId);
+  OneSignal.Notifications.requestPermission(true);
+  OneSignal.InAppMessages.paused(true);
+  OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+    event.notification.display(); // ✅ force display in foreground
+  });
   //makes full screen mode
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
@@ -26,7 +37,6 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]).then((value) {
-    _initializeFirebase();
     runApp(const MyApp());
   });
 }
@@ -61,6 +71,4 @@ class MyApp extends StatelessWidget {
   }
 }
 
-Future<void> _initializeFirebase() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-}
+

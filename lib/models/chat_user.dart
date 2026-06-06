@@ -17,7 +17,7 @@ class ChatUser {
   late  String id;
   late final String lastActive;
   late final bool isOnline;
-  late final String pushToken;
+  late String pushToken;
   late final String email;
 
   ChatUser.fromJson(Map<String, dynamic> json){

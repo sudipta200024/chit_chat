@@ -1,10 +1,15 @@
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:chit_chat/models/chat_message_model.dart';
 import 'package:chit_chat/models/chat_user.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Type;
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../main.dart';
+import 'api_keys.dart';
 
 class Apis {
   static FirebaseAuth auth = FirebaseAuth.instance;
@@ -17,10 +22,69 @@ class Apis {
     cache: false,
   );
 
+  //current user from firebase auth
   static User get currentUser => auth.currentUser!; //logged in user
 
   //declaring a static variable chatUser model
+  //current user from firebase firestore
   static late ChatUser me;
+
+  //for firebase messaging Access
+  static FirebaseMessaging fireMessaging = FirebaseMessaging.instance;
+
+  static Future<void> syncPushToken() async {
+    await fireMessaging.requestPermission();
+
+    // get OneSignal ID
+    await Future.delayed(Duration(seconds: 2));
+    logger.i('Device OneSignal ID: ${OneSignal.User.pushSubscription.id}');
+    final osId = OneSignal.User.pushSubscription.id;
+
+    if (osId != null) {
+      me.pushToken = osId;
+      await firestore.collection('users').doc(currentUser.uid).update({
+        'push_token': osId,
+      });
+      logger.i('OneSignal ID: $osId');
+    }
+
+    // ✅ listen for token changes (reinstall, new device)
+    OneSignal.User.pushSubscription.addObserver((state) async {
+      final newId = state.current.id;
+      if (newId != null && newId != me.pushToken) {
+        me.pushToken = newId;
+        await firestore.collection('users').doc(currentUser.uid).update({
+          'push_token': newId,
+        });
+        logger.i('OneSignal ID updated: $newId');
+      }
+    });
+  }
+  static Future<void> sendPushNotification(ChatUser chatUser, String msg) async {
+    try {
+      logger.i('Sending to token: ${chatUser.pushToken}');
+      final body = {
+        "app_id": ApiKeys.oneSignalAppId,
+        "include_player_ids": [chatUser.pushToken], // receiver's OneSignal ID not current id
+        "headings": {"en": me.name},                // sender's name as title
+        "contents": {"en": msg},                    // message as body
+        //notification pop settings
+        "priority": 10,
+        "android_visibility": 1,
+      };
+
+      final response = await http.post(
+        Uri.parse("https://onesignal.com/api/v1/notifications"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": ApiKeys.oneSignalRestApiKey,        },
+        body: jsonEncode(body),
+      );
+      logger.i('Notification response: ${response.body}');
+    } catch (e) {
+      logger.e('Notification error: $e');
+    }
+  }
 
   //get self info from firestore
   static Future<void> getSelfInfo() async {
@@ -29,7 +93,9 @@ class Apis {
     ) async {
       if (user.exists) {
         me = ChatUser.fromJson(user.data()!);
-      } else {
+        await syncPushToken(); //for firebase messaging gets token after getting user info 'me'
+        updateActiveStatus(true);
+        } else {
         await createUser().then((value) => getSelfInfo());
       }
     });
@@ -92,6 +158,7 @@ class Apis {
     return await firestore.collection('users').doc(currentUser.uid).update({
       'is_online': isOnline,
       'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
+      'push_token': me.pushToken,
     });
   }
 
@@ -179,6 +246,8 @@ class Apis {
           .doc(time)
           .set(chatMessageModel.toJson());
       logger.i('message sent$msg');
+      //send push notification
+      await sendPushNotification(chatUser, msg);
     } catch (e) {
       logger.e(' sendMessage error: $e');
     }
@@ -255,6 +324,7 @@ class Apis {
           .doc(time)
           .set(chatMessageModel.toJson());
       logger.i('message sent$imageUrl');
+      await sendPushNotification(chatUser, '📷 Image');
       return imageUrl;
     } catch (e) {
       logger.e('Cloudinary error: $e');

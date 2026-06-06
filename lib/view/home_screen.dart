@@ -25,13 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     Apis.getSelfInfo();
     //by default set active when in app
-    Apis.updateActiveStatus(true);
-    //for updating active status
     SystemChannels.lifecycle.setMessageHandler((message){
       logger.e('Message: $message');
-
       if(Apis.auth.currentUser != null){
-
         if(message.toString().contains('resume')){//works only when logged in : it will still work when logged out and show active
           Apis.updateActiveStatus(true);//set active
         }else{
