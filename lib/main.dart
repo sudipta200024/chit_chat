@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'api/api_keys.dart';
+import 'api/apis.dart';
 import 'firebase_options.dart';
 
 late Size mq; //media query Size declaration globally
@@ -18,14 +19,9 @@ Logger logger = Logger(
 void main() async{
 
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // OneSignal init
-  OneSignal.initialize(ApiKeys.oneSignalAppId);
-  OneSignal.Notifications.requestPermission(true);
-  OneSignal.InAppMessages.paused(true);
-  OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-    event.notification.display(); // ✅ force display in foreground
-  });
+  //pushNotification and OneSignal push notification initializations
+  _initializeFirebaseAndPushNotification();
+
   //makes full screen mode
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
@@ -70,5 +66,21 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+Future<void> _initializeFirebaseAndPushNotification() async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // OneSignal init
+  OneSignal.initialize(ApiKeys.oneSignalAppId);
+  OneSignal.Notifications.requestPermission(true);
+  OneSignal.InAppMessages.paused(true);
+  OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+    event.preventDefault();
+    Apis.showNotification(
+      event.notification.title ?? '',
+      event.notification.body ?? '',
+    );
+  });
 
+
+  await Apis.initLocalNotifications();
+}
 

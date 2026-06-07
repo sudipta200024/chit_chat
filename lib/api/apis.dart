@@ -7,9 +7,10 @@ import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-
 import '../main.dart';
 import 'api_keys.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 
 class Apis {
   static FirebaseAuth auth = FirebaseAuth.instance;
@@ -17,8 +18,8 @@ class Apis {
 
   //cloudinary access
   static final CloudinaryPublic cloudinary = CloudinaryPublic(
-    'dd4kuty1f',
-    'chitchat_images',
+    ApiKeys.cloudinaryCloudName,
+    ApiKeys.cloudinaryUploadPreset,
     cache: false,
   );
 
@@ -48,7 +49,7 @@ class Apis {
       logger.i('OneSignal ID: $osId');
     }
 
-    // ✅ listen for token changes (reinstall, new device)
+    // listen for token changes (reinstall, new device)
     OneSignal.User.pushSubscription.addObserver((state) async {
       final newId = state.current.id;
       if (newId != null && newId != me.pushToken) {
@@ -71,13 +72,15 @@ class Apis {
         //notification pop settings
         "priority": 10,
         "android_visibility": 1,
+        "ttl": 259200,
+        "isAndroidBackground": true,
       };
 
       final response = await http.post(
         Uri.parse("https://onesignal.com/api/v1/notifications"),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": ApiKeys.oneSignalRestApiKey,        },
+          "Authorization": "Basic ${ApiKeys.oneSignalRestApiKey}",        },
         body: jsonEncode(body),
       );
       logger.i('Notification response: ${response.body}');
@@ -86,6 +89,43 @@ class Apis {
     }
   }
 
+
+
+// add inside Apis class
+  static final FlutterLocalNotificationsPlugin localNotifications =
+  FlutterLocalNotificationsPlugin();
+
+  static Future<void> initLocalNotifications() async {
+    const AndroidInitializationSettings androidSettings =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const InitializationSettings settings =
+    InitializationSettings(android: androidSettings);
+
+    await localNotifications.initialize(
+      settings: settings,
+    );
+  }
+  static Future<void> showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'chit_chat_channel',
+      'Chit Chat Messages',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    const NotificationDetails details =
+    NotificationDetails(android: androidDetails);
+
+    await localNotifications.show(
+      id: 0,
+      title: title,
+      body: body,
+      notificationDetails: details,
+    );
+  }
   //get self info from firestore
   static Future<void> getSelfInfo() async {
     await firestore.collection('users').doc(currentUser.uid).get().then((
