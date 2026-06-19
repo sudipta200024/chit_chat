@@ -12,6 +12,7 @@ import '../models/chat_user.dart';
 class MessageCard extends StatefulWidget {
   final ChatMessageModel chatMessageModel;
   final ChatUser chatUser;
+  //hi
 
   const MessageCard({
     super.key,
