@@ -76,8 +76,8 @@ class _ChatUserCardState extends State<ChatUserCard> {
               subtitle: Text(
                 _chatMessageModel != null
                     ? _chatMessageModel!.type == Type.image
-                    ? '📷 Image'                // ← shows this for image type ✅
-                    : _chatMessageModel!.msg    // ← shows text as before ✅
+                    ? 'Image'                // for image type
+                    : _chatMessageModel!.msg    // for msg type
                     : widget.chatUser.about,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

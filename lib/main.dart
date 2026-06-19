@@ -12,12 +12,12 @@ late Size mq; //media query Size declaration globally
 Logger logger = Logger(
   printer: PrettyPrinter(
     methodCount: 0,
-    printEmojis: true,   // ← removes emojis
-    colors: true,         // ← keeps colors
+    printEmojis: true, // ← removes emojis
+    colors: true, // ← keeps colors
   ),
 );
-void main() async{
 
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   //pushNotification and OneSignal push notification initializations
   _initializeFirebaseAndPushNotification();
@@ -29,14 +29,14 @@ void main() async{
       systemNavigationBarColor: Colors.transparent,
       statusBarColor: Colors.transparent,
     ),
-  );  SystemChrome.setPreferredOrientations([
+  );
+  SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]).then((value) {
     runApp(const MyApp());
   });
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -66,6 +66,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 Future<void> _initializeFirebaseAndPushNotification() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // OneSignal init
@@ -79,8 +80,5 @@ Future<void> _initializeFirebaseAndPushNotification() async {
       event.notification.body ?? '',
     );
   });
-
-
   await Apis.initLocalNotifications();
 }
-

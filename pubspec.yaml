@@ -55,6 +55,7 @@ dependencies:
   http: ^1.6.0
   flutter_notification_channel: ^3.2.0
   flutter_local_notifications: ^22.0.0
+  gal: ^2.3.0
 
 
 dev_dependencies:

@@ -11,7 +11,6 @@ import '../main.dart';
 import 'api_keys.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-
 class Apis {
   static FirebaseAuth auth = FirebaseAuth.instance;
   static FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -33,13 +32,15 @@ class Apis {
   //for firebase messaging Access
   static FirebaseMessaging fireMessaging = FirebaseMessaging.instance;
 
+  //notification
+
   static Future<void> syncPushToken() async {
     await fireMessaging.requestPermission();
 
     // get OneSignal ID
     await Future.delayed(Duration(seconds: 2));
     logger.i('Device OneSignal ID: ${OneSignal.User.pushSubscription.id}');
-    final osId = OneSignal.User.pushSubscription.id;
+    final osId = OneSignal.User.pushSubscription.id; // here is onesignal id created with device ipaddress and other address
 
     if (osId != null) {
       me.pushToken = osId;
@@ -49,7 +50,7 @@ class Apis {
       logger.i('OneSignal ID: $osId');
     }
 
-    // listen for token changes (reinstall, new device)
+    // used for token changes
     OneSignal.User.pushSubscription.addObserver((state) async {
       final newId = state.current.id;
       if (newId != null && newId != me.pushToken) {
@@ -61,26 +62,30 @@ class Apis {
       }
     });
   }
-  static Future<void> sendPushNotification(ChatUser chatUser, String msg) async {
+
+  static Future<void> sendPushNotification(
+    ChatUser chatUser,
+    String msg,
+  ) async {
     try {
-      logger.i('Sending to token: ${chatUser.pushToken}');
+      logger.i('Sending token to receiver: ${chatUser.pushToken}');
       final body = {
         "app_id": ApiKeys.oneSignalAppId,
-        "include_player_ids": [chatUser.pushToken], // receiver's OneSignal ID not current id
-        "headings": {"en": me.name},                // sender's name as title
-        "contents": {"en": msg},                    // message as body
+        "include_player_ids": [chatUser.pushToken],// receiver's OneSignal ID not current id
+        "headings": {"en": me.name},
+        "contents": {"en": msg},
         //notification pop settings
         "priority": 10,
         "android_visibility": 1,
         "ttl": 259200,
         "isAndroidBackground": true,
       };
-
       final response = await http.post(
         Uri.parse("https://onesignal.com/api/v1/notifications"),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Basic ${ApiKeys.oneSignalRestApiKey}",        },
+          "Authorization": "Basic ${ApiKeys.oneSignalRestApiKey}",
+        },
         body: jsonEncode(body),
       );
       logger.i('Notification response: ${response.body}');
@@ -89,35 +94,33 @@ class Apis {
     }
   }
 
-
-
-// add inside Apis class
-  static final FlutterLocalNotificationsPlugin localNotifications =
-  FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
 
   static Future<void> initLocalNotifications() async {
     const AndroidInitializationSettings androidSettings =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings settings =
-    InitializationSettings(android: androidSettings);
-
-    await localNotifications.initialize(
-      settings: settings,
+    const InitializationSettings settings = InitializationSettings(
+      android: androidSettings,
     );
+
+    await localNotifications.initialize(settings: settings);
   }
-  static Future<void> showNotification(String title, String body) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'chit_chat_channel',
-      'Chit Chat Messages',
-      importance: Importance.max,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-    );
 
-    const NotificationDetails details =
-    NotificationDetails(android: androidDetails);
+  static Future<void> showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'chit_chat_channel',
+          'Chit Chat Messages',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
+        );
+
+    const NotificationDetails details = NotificationDetails(
+      android: androidDetails,
+    );
 
     await localNotifications.show(
       id: 0,
@@ -126,6 +129,7 @@ class Apis {
       notificationDetails: details,
     );
   }
+
   //get self info from firestore
   static Future<void> getSelfInfo() async {
     await firestore.collection('users').doc(currentUser.uid).get().then((
@@ -135,7 +139,7 @@ class Apis {
         me = ChatUser.fromJson(user.data()!);
         await syncPushToken(); //for firebase messaging gets token after getting user info 'me'
         updateActiveStatus(true);
-        } else {
+      } else {
         await createUser().then((value) => getSelfInfo());
       }
     });
@@ -256,7 +260,9 @@ class Apis {
   }
 
   //get all messages
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser chatUser,) {
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
+    ChatUser chatUser,
+  ) {
     return firestore
         .collection('chats/${getConversationID(chatUser.id)}/messages')
         .orderBy('sent', descending: true)

@@ -10,6 +10,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import '../api/apis.dart';
 import '../helper/dialogs.dart';
 
@@ -36,6 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             IconButton(
               onPressed: () async {
                 Dialogs.showProgressBar(context);
+                await OneSignal.logout();//exit onesignal so that same device with separate id can login
                 await Apis.updateActiveStatus(false);//update inactive
                 await Apis.auth.signOut();//signout from firebase
                 await GoogleSignIn().signOut();
