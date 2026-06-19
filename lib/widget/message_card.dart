@@ -25,11 +25,20 @@ class MessageCard extends StatefulWidget {
 
 class _MessageCardState extends State<MessageCard> {
   @override
+  void initState() {
+    super.initState();
+    if (widget.chatMessageModel.read.isEmpty) {
+      Apis.updateReadMessageStatus(widget.chatMessageModel);
+    }
+  }
   Widget build(BuildContext context) {
     bool isMe = Apis.currentUser.uid == widget.chatMessageModel.fromId;
     //if message is from current id then show green and if not then its frnds msg(logic)
     return InkWell(
-      onLongPress: () {
+      onLongPress: () async{
+        FocusScope.of(context).unfocus();//close keyboard
+        await Future.delayed(const Duration(milliseconds: 200));
+        if (!mounted) return;
         _showBottomSheet(isMe);
       },
       child: isMe ? _greenMessage() : _whiteMessage(),
@@ -159,9 +168,6 @@ class _MessageCardState extends State<MessageCard> {
   Widget _whiteMessage() {
     // friend's msg
     //update read while enters
-    if (widget.chatMessageModel.read.isEmpty) {
-      Apis.updateReadMessageStatus(widget.chatMessageModel);
-    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -308,13 +314,95 @@ class _MessageCardState extends State<MessageCard> {
               children: [
                 if (isMe) ...[
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pop(sheetContext); //closes model sheet
+
+                      final TextEditingController editMsgController =
+                          TextEditingController(
+                            text: widget.chatMessageModel.msg,
+                          );
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          title: Text('Edit Message'),
+                          content: TextField(
+                            controller: editMsgController,
+                            maxLines: null,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                              },
+                              child: Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                final newText = editMsgController.text.trim();
+                                if (newText.isNotEmpty &&
+                                    newText != widget.chatMessageModel.msg) {
+                                  await Apis.updateMessage(
+                                    widget.chatMessageModel,
+                                    newText,
+                                  );
+                                  Navigator.pop(dialogContext);
+                                }
+                              },
+                              child: Text('Update'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                     icon: Icon(Icons.edit),
                     label: Text('Edit'),
                   ),
 
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          title: Text('Delete Message'),
+                          content: Text('Are you sure you want to delete this message?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext); // close confirm dialog only
+                              },
+                              child: Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                Navigator.pop(dialogContext); // close confirm dialog
+                                Navigator.pop(sheetContext);  // close bottom sheet
+
+                                await Apis.deleteMessage(widget.chatMessageModel);
+
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Message deleted!')),
+                                );
+                              },
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                     icon: Icon(Icons.delete),
                     label: Text('Delete'),
                   ),

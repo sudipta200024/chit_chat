@@ -40,7 +40,8 @@ class Apis {
     // get OneSignal ID
     await Future.delayed(Duration(seconds: 2));
     logger.i('Device OneSignal ID: ${OneSignal.User.pushSubscription.id}');
-    final osId = OneSignal.User.pushSubscription.id; // here is onesignal id created with device ipaddress and other address
+    final osId = OneSignal.User.pushSubscription
+        .id; // here is onesignal id created with device ipaddress and other address
 
     if (osId != null) {
       me.pushToken = osId;
@@ -63,15 +64,14 @@ class Apis {
     });
   }
 
-  static Future<void> sendPushNotification(
-    ChatUser chatUser,
-    String msg,
-  ) async {
+  static Future<void> sendPushNotification(ChatUser chatUser,
+      String msg,) async {
     try {
       logger.i('Sending token to receiver: ${chatUser.pushToken}');
       final body = {
         "app_id": ApiKeys.oneSignalAppId,
-        "include_player_ids": [chatUser.pushToken],// receiver's OneSignal ID not current id
+        "include_player_ids": [chatUser.pushToken],
+        // receiver's OneSignal ID not current id
         "headings": {"en": me.name},
         "contents": {"en": msg},
         //notification pop settings
@@ -98,7 +98,7 @@ class Apis {
 
   static Future<void> initLocalNotifications() async {
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings settings = InitializationSettings(
       android: androidSettings,
@@ -109,14 +109,14 @@ class Apis {
 
   static Future<void> showNotification(String title, String body) async {
     const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'chit_chat_channel',
-          'Chit Chat Messages',
-          importance: Importance.max,
-          priority: Priority.high,
-          playSound: true,
-          enableVibration: true,
-        );
+    AndroidNotificationDetails(
+      'chit_chat_channel',
+      'Chit Chat Messages',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+    );
 
     const NotificationDetails details = NotificationDetails(
       android: androidDetails,
@@ -133,8 +133,7 @@ class Apis {
   //get self info from firestore
   static Future<void> getSelfInfo() async {
     await firestore.collection('users').doc(currentUser.uid).get().then((
-      user,
-    ) async {
+        user,) async {
       if (user.exists) {
         me = ChatUser.fromJson(user.data()!);
         await syncPushToken(); //for firebase messaging gets token after getting user info 'me'
@@ -152,7 +151,10 @@ class Apis {
   }
 
   static Future<void> createUser() async {
-    final time = DateTime.now().microsecondsSinceEpoch.toString();
+    final time = DateTime
+        .now()
+        .microsecondsSinceEpoch
+        .toString();
     final chatUser = ChatUser(
       image: currentUser.photoURL.toString(),
       name: currentUser.displayName!,
@@ -189,8 +191,7 @@ class Apis {
 
   //to get info about users online offline data and active time
   static Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(
-    ChatUser chatUser,
-  ) {
+      ChatUser chatUser,) {
     return firestore
         .collection('users')
         .where('id', isEqualTo: chatUser.id)
@@ -201,7 +202,10 @@ class Apis {
   static Future<void> updateActiveStatus(bool isOnline) async {
     return await firestore.collection('users').doc(currentUser.uid).update({
       'is_online': isOnline,
-      'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
+      'last_active': DateTime
+          .now()
+          .millisecondsSinceEpoch
+          .toString(),
       'push_token': me.pushToken,
     });
   }
@@ -244,7 +248,8 @@ class Apis {
       //if current id is smaller than userId (id,passing parameter of chatUser id)then currentuid_userID
       return '${currentUser.uid}_$id';
     } else {
-      return '${id}_${currentUser.uid}'; //if current id is bigger than userId (id,passing parameter of chatUser id)then userID_currentuid
+      return '${id}_${currentUser
+          .uid}'; //if current id is bigger than userId (id,passing parameter of chatUser id)then userID_currentuid
 
       // You open chat:    compareTo() → "AAA_BBB" ✅
       // userId or Friend opens chat: compareTo() → "AAA_BBB" ✅ same!
@@ -252,8 +257,7 @@ class Apis {
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllImageMessages(
-    ChatUser chatUser,
-  ) {
+      ChatUser chatUser,) {
     return firestore
         .collection('chats/${getConversationID(chatUser.id)}/messages')
         .snapshots();
@@ -261,8 +265,7 @@ class Apis {
 
   //get all messages
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
-    ChatUser chatUser,
-  ) {
+      ChatUser chatUser,) {
     return firestore
         .collection('chats/${getConversationID(chatUser.id)}/messages')
         .orderBy('sent', descending: true)
@@ -272,7 +275,10 @@ class Apis {
   //send message logic
   static Future<void> sendMessage(ChatUser chatUser, String msg) async {
     try {
-      final time = DateTime.now().millisecondsSinceEpoch.toString();
+      final time = DateTime
+          .now()
+          .millisecondsSinceEpoch
+          .toString();
 
       final ChatMessageModel chatMessageModel = ChatMessageModel(
         msg: msg,
@@ -287,8 +293,8 @@ class Apis {
 
       await firestore
           .collection(
-            'chats/${getConversationID(chatUser.id)}/messages',
-          ) //senders ID
+        'chats/${getConversationID(chatUser.id)}/messages',
+      ) //senders ID
           .doc(time)
           .set(chatMessageModel.toJson());
       logger.i('message sent$msg');
@@ -299,44 +305,69 @@ class Apis {
     }
   }
 
+
   //update message read status with blue tik
   static Future<void> updateReadMessageStatus(
-    ChatMessageModel chatMessageModel,
-  ) async {
+      ChatMessageModel chatMessageModel,) async {
     logger.e(chatMessageModel.fromId);
     await firestore
         .collection(
-          'chats/${getConversationID(chatMessageModel.fromId)}/messages', //senders id
-          // chatMessageModel.fromId = sender’s UID (John’s ID here)
-          // chatMessageModel.toId   = receiver’s UID (my ID here, since I received it)
-        )
+      'chats/${getConversationID(
+          chatMessageModel.fromId)}/messages', //senders id
+      // chatMessageModel.fromId = sender’s UID (John’s ID here)
+      // chatMessageModel.toId   = receiver’s UID (my ID here, since I received it)
+    )
         .doc(chatMessageModel.sent)
         .update({
-          'read': DateTime.now().millisecondsSinceEpoch.toString(),
-        }); //update read = current time
+      'read': DateTime
+          .now()
+          .millisecondsSinceEpoch
+          .toString(),
+    }); //update read = current time
   }
 
+  //update msg
+  static Future<void> updateMessage(ChatMessageModel chatMessageModel,
+      String updatedMsg) async {
+    try {
+      await firestore.collection(
+          'chats/${getConversationID(chatMessageModel.fromId == currentUser.uid ? chatMessageModel.toId : chatMessageModel.fromId)}/messages').doc(
+          chatMessageModel.sent).update({'msg': updatedMsg});
+    }catch(e){
+      logger.e('updateMessage error: $e');
+    }
+  }
+  //delete msg
+  //delete msg
+  static Future<void> deleteMessage(ChatMessageModel chatMessageModel) async {
+    try {
+      await firestore.collection(
+          'chats/${getConversationID(chatMessageModel.fromId == currentUser.uid ? chatMessageModel.toId : chatMessageModel.fromId)}/messages').doc(
+          chatMessageModel.sent).delete();
+    }catch(e){
+      logger.e('deleteMessage error: $e');
+    }
+  }
+
+
   static Stream<QuerySnapshot<Map<String, dynamic>>> getLastMessage(
-    ChatUser chatUser,
-  ) {
+      ChatUser chatUser,) {
     //passing the parameter of chatUser id cause current id wants to sent to chatUser
     //gets the id that will be passed from messageCard
     return firestore
         .collection('chats/${getConversationID(chatUser.id)}/messages')
         .orderBy(
-          'sent',
-          descending: true,
-        ) //descending order to get the latest message
+      'sent',
+      descending: true,
+    ) //descending order to get the latest message
         .limit(1) //only get the latest message for less load time
         .snapshots();
   }
 
   //send chat images
 
-  static Future<String?> sendChatImage(
-    ChatUser chatUser,
-    String imagePath,
-  ) async {
+  static Future<String?> sendChatImage(ChatUser chatUser,
+      String imagePath,) async {
     //just like sendMsg + upload picture together
     try {
       CloudinaryResponse response = await cloudinary.uploadFile(
@@ -348,7 +379,9 @@ class Apis {
         ),
       );
       String imageUrl = response.secureUrl; //this is coming from cloudinary
-      final time = DateTime.now().millisecondsSinceEpoch
+      final time = DateTime
+          .now()
+          .millisecondsSinceEpoch
           .toString(); //for creating msg id
 
       final ChatMessageModel chatMessageModel = ChatMessageModel(
@@ -365,8 +398,8 @@ class Apis {
       //update image url inside firestore(step 2)
       await firestore
           .collection(
-            'chats/${getConversationID(chatUser.id)}/messages',
-          ) //senders ID
+        'chats/${getConversationID(chatUser.id)}/messages',
+      ) //senders ID
           .doc(time)
           .set(chatMessageModel.toJson());
       logger.i('message sent$imageUrl');
